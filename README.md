@@ -1,8 +1,3 @@
-Tentu, ini adalah file `README.md` yang lengkap, profesional, dan menarik untuk proyek GitHub Anda. Saya telah menambahkan badge, emoji, struktur yang rapi, dan penjelasan fitur yang detail agar terlihat "hidup" dan interaktif.
-
-Anda bisa copy paste kode di bawah ini ke dalam file bernama `README.md` di root folder proyek Anda.
-
-```markdown
 <h1 align="center">DMK Store 🛍️</h1>
 <p align="center">
   <strong>Modern Thrift Shop Web Application</strong><br>
