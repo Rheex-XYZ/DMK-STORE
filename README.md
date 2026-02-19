@@ -1,232 +1,171 @@
-# DMK Store - Thrift Shop Pasaman Barat
+Tentu, ini adalah file `README.md` yang lengkap, profesional, dan menarik untuk proyek GitHub Anda. Saya telah menambahkan badge, emoji, struktur yang rapi, dan penjelasan fitur yang detail agar terlihat "hidup" dan interaktif.
+
+Anda bisa copy paste kode di bawah ini ke dalam file bernama `README.md` di root folder proyek Anda.
+
+```markdown
+<h1 align="center">DMK Store 🛍️</h1>
+<p align="center">
+  <strong>Modern Thrift Shop Web Application</strong><br>
+  <i>Platform jual beli pakaian thrift berkualitas dengan pengalaman belanja premium.</i>
+</p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge" alt="Status">
-  <img src="https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge" alt="Version">
-  <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License">
+  <a href="https://github.com/username/dmk-store/stargazers"><img src="https://img.shields.io/github/stars/username/dmk-store?style=for-the-badge&logo=starship&logoColor=white&color=ffd700" alt="Stars"></a>
+  <a href="https://github.com/username/dmk-store/network/members"><img src="https://img.shields.io/github/forks/username/dmk-store?style=for-the-badge&logo=git&logoColor=white&color=green" alt="Forks"></a>
+  <a href="https://github.com/username/dmk-store/issues"><img src="https://img.shields.io/github/issues/username/dmk-store?style=for-the-badge&logo=github&logoColor=white&color=red" alt="Issues"></a>
+  <a href="https://github.com/username/dmk-store/blob/main/LICENSE"><img src="https://img.shields.io/github/license/username/dmk-store?style=for-the-badge&logo=github&logoColor=white&color=blue" alt="License"></a>
 </p>
 
 <p align="center">
-  <strong>Website E-Commerce Thrift Shop Modern</strong><br>
-  <em>Tampil stylish tidak perlu mahal</em>
+  <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white"/>
+  <img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white"/>
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black"/>
+  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white"/>
 </p>
 
----
+<br>
 
-## Deskripsi
-
-**DMK Store** adalah website e-commerce untuk toko thrift shop yang berlokasi di Pasaman Barat, Sumatera Barat. Website ini dirancang dengan tampilan modern, elegan, dan user-friendly untuk memudahkan pelanggan dalam membeli pakaian second berkualitas dengan harga terjangkau.
-
----
-
-## Fitur Utama
-
-| Fitur | Keterangan |
-|-------|------------|
-| Katalog Produk | Tampilan produk dengan gambar slider dan filter kategori |
-| Keranjang Belanja | Sistem keranjang dengan penyimpanan localStorage |
-| Checkout WhatsApp | Proses checkout langsung via WhatsApp dengan detail pesanan |
-| Multi-Pembayaran | Pilihan transfer Bank BSI dan Bank Nagari |
-| Detail Produk | Modal popup dengan deskripsi lengkap produk |
-| Stock Tracking | Indikator ketersediaan stok real-time |
-| Responsive Design | Tampilan optimal di desktop, tablet, dan mobile |
-| Dark Theme | Tema gelap elegan dengan aksen gold |
-
----
-
-## Kategori Produk
-
-- Kaos
-- Hoodie
-- Celana
-- Jeans
-- Kemeja
-- Jaket
-- Rok
-- Dress
-
----
-
-## Teknologi
-
-<p>
-  <img src="https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white" alt="HTML5">
-  <img src="https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white" alt="CSS3">
-  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript">
-  <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
+<p align="center">
+  <img src="https://readme-typing-svg.demolab.com?font=Playfair+Display&size=28&duration=3000&pause=1000&color=D4AF37&center=true&vCenter=true&random=false&width=600&lines=Thrift+Shop+Pasaman+Barat;Kualitas+Premium+Harga+Terjangkau;Belanja+Sekarang!" alt="Typing SVG" />
 </p>
 
-- **HTML5** - Struktur semantik
-- **CSS3** - Styling dengan animasi dan efek modern
-- **JavaScript (Vanilla)** - Logika aplikasi tanpa framework
-- **Tailwind CSS** - Utility-first CSS framework
-- **Google Fonts** - Playfair Display & Poppins
-- **LocalStorage** - Persistensi data keranjang
+<br>
+
+<!-- TABLE OF CONTENTS -->
+<details open="open">
+  <summary><h2 style="display: inline-block">📑 Daftar Isi</h2></summary>
+  <ol>
+    <li><a href="#-tentang-proyek">Tentang Proyek</a></li>
+    <li><a href="#-fitur-utama">Fitur Utama</a></li>
+    <li><a href="#-tampilan-aplikasi">Tampilan Aplikasi</a></li>
+    <li><a href="#-cara-menggunakan">Cara Menggunakan</a></li>
+    <li><a href="#-struktur-file">Struktur File</a></li>
+    <li><a href="#-teknologi">Teknologi</a></li>
+    <li><a href="#-lisensi">Lisensi</a></li>
+  </ol>
+</details>
 
 ---
 
-## Struktur File
+## 🚀 Tentang Proyek
 
-```
+**DMK Store** adalah sebuah website e-commerce single-page application (SPA) yang dirancang khusus untuk toko thrift shop. Dengan tampilan antarmuka yang gelap (*dark mode*) dan aksen warna emas yang elegan, website ini menawarkan pengalaman pengguna yang premium namun tetap ringan dan cepat.
+
+Proyek ini dibangun menggunakan teknologi web dasar (Vanilla JS) tanpa framework berat, menjadikannya solusi yang sempurna untuk bisnis kecil hingga menengah yang ingin memiliki toko online dengan biaya hosting minimal.
+
+### ✨ Keunggulan
+- 💎 **Desain Premium**: Tampilan gelap dengan aksen emas yang mewah.
+- 📱 **Fully Responsive**: Tampilan menyesuaikan sempurna di Desktop, Tablet, dan Mobile.
+- ⚡ **Performa Cepat**: Tanpa library berat, loading hampir instan.
+- 💾 **Local Storage**: Keranjang belanja tersimpan otomatis di browser.
+
+---
+
+## 🔥 Fitur Utama
+
+### 🏠 Halaman Utama (Index)
+- **Prioritas Produk**: Produk dengan tag `Flash Sale` dan `New Release` muncul paling atas.
+- **Filter Kategori**: Sortir produk berdasarkan Kaos, Hoodie, Jeans, dll.
+- **Image Slider**: Slider gambar produk yang smooth dan interaktif.
+- **Deskripsi Cepat**: Modal popup untuk melihat detail produk singkat.
+
+### 🌟 Halaman New Release
+- Badge "NEW" hijau yang eye-catching.
+- Animasi pulse pada badge produk baru.
+- Filter khusus untuk produk terbaru.
+
+### ⚡ Halaman Flash Sale
+- **Live Countdown Timer**: Timer mundur yang berjalan secara realtime.
+- **Harga Coret**: Tampilan harga asli dicoret dengan harga diskon yang menonjol.
+- **Progress Bar Stok**: Indikator visual sisa stok yang mencegah kehabisan barang.
+
+### 🛒 Sistem Keranjang & Checkout
+- **Persistent Cart**: Data keranjang tersimpan di Local Storage (tidak hilang saat refresh).
+- **Checkout Modal**: Pop-up pemilihan metode pembayaran (Bank BSI / Nagari).
+- **WhatsApp Integration**: Pesan checkout otomatis dengan link gambar produk, total harga, dan detail bank.
+
+---
+
+## 🛠️ Cara Menggunakan
+
+Ikuti langkah-langkah berikut untuk menjalankan proyek ini di komputer lokal Anda:
+
+1.  **Clone Repository**
+    ```sh
+    git clone https://github.com/username/dmk-store.git
+    ```
+2.  **Masuk ke Direktori**
+    ```sh
+    cd dmk-store
+    ```
+3.  **Jalankan di Browser**
+    Cukup buka file `index.html` menggunakan browser favorit Anda (Chrome, Firefox, dll).
+    
+    *Tips: Gunakan extension "Live Server" di VS Code untuk pengalaman development yang lebih baik dengan auto-reload.*
+
+---
+
+## 📂 Struktur File
+
+Struktur folder proyek ini sangat sederhana dan mudah dipahami:
+
+```text
 dmk-store/
-├── index.html          # Halaman utama
-├── style.css           # Stylesheet utama
-├── script.js           # Logika JavaScript
-├── README.md           # Dokumentasi
-└── assets/             # Folder aset (jika ada)
-    └── images/         # Gambar produk
+├── 📁 assets/              # Folder gambar (jika ada lokal)
+├── 📄 index.html           # Halaman utama
+├── 📄 newrelease.html      # Halaman produk baru
+├── 📄 flashsale.html       # Halaman diskon
+├── 🎨 style.css            # CSS utama (style global)
+├── 🎨 newrelease.css       # CSS khusus halaman new release
+├── 🎨 flashsale.css        # CSS khusus halaman flash sale
+├── ⚙️ script.js            # Logic JavaScript utama
+├── ⚙️ newrelease.js        # Logic JS halaman new release
+├── ⚙️ flashsale.js         # Logic JS halaman flash sale
+└── 📄 README.md            # File dokumentasi
 ```
 
 ---
 
-## Cara Penggunaan
+## 💻 Teknologi
 
-### 1. Clone Repository
-```bash
-git clone https://github.com/username/dmk-store.git
-cd dmk-store
-```
+Proyek ini dibangun dengan fokus pada kemudahan dan kecepatan:
 
-### 2. Buka di Browser
-Cukup buka file `index.html` di browser, atau gunakan live server:
-
-```bash
-# Menggunakan VS Code Live Server
-# Klik kanan pada index.html > Open with Live Server
-
-# Atau menggunakan Python
-python -m http.server 8000
-# Buka http://localhost:8000
-```
-
-### 3. Kustomisasi Produk
-Edit array `products` di `script.js` untuk menambah/mengubah produk:
-
-```javascript
-const products = [
-  {
-    id: 1,
-    name: "Nama Produk",
-    price: 85000,
-    category: "kaos",
-    size: "L - XL",
-    stock: 2,
-    description: "Deskripsi produk",
-    images: ["url-gambar-1.jpg", "url-gambar-2.jpg"]
-  },
-  // ... produk lainnya
-];
-```
-
-### 4. Ubah Informasi Pembayaran
-Edit bagian payment options di `index.html` dan fungsi `confirmCheckout()` di `script.js`:
-
-```javascript
-// Di script.js - fungsi confirmCheckout()
-if (method === 'bsi') {
-  bankInfo = {
-    name: "Bank BSI",
-    rekening: "7145183485",
-    atasNama: "Sri Nofrianti",
-  };
-}
-```
+*   **Frontend**: HTML5, CSS3, JavaScript (ES6)
+*   **Styling**: CSS Custom Properties (Variables), Flexbox, Grid, Tailwind CSS (Utility Classes)
+*   **Icons**: SVG Inline
+*   **Backend-less**: Menggunakan LocalStorage untuk database client-side.
 
 ---
 
-## Fitur Tampilan
+## 🤝 Kontribusi
 
-### Hero Section
-- Background animasi floating orbs
-- Badge label "Thrift Shop Pasaman Barat"
-- Call-to-action button dengan smooth scroll
+Kontribusi membuat komunitas open source menjadi tempat yang luar biasa untuk belajar, menginspirasi, dan berkreasi. Kontribusi apa pun yang Anda berikan **sangat dihargai**.
 
-### Product Cards
-- Image slider dengan navigasi dot dan arrow
-- Hover effects dengan transform dan shadow
-- Badge kategori dan status stok
-- Tombol aksi: Lihat Deskripsi, Keranjang, Beli
-
-### Cart Sidebar
-- Slide-in animation dari kanan
-- Daftar item dengan gambar thumbnail
-- Hapus item dengan animasi
-- Total harga otomatis
-
-### Checkout Modal
-- Ringkasan pesanan
-- Pilihan metode pembayaran visual
-- Konfirmasi langsung ke WhatsApp
+1.  Fork Project ini
+2.  Buat Branch Fitur Anda (`git checkout -b feature/AmazingFeature`)
+3.  Commit Perubahan Anda (`git commit -m 'Add some AmazingFeature'`)
+4.  Push ke Branch (`git push origin feature/AmazingFeature`)
+5.  Buka Pull Request
 
 ---
 
-## Responsive Breakpoints
+## 📝 Lisensi
 
-| Device | Width | Adjustments |
-|--------|-------|-------------|
-| Desktop | > 768px | Full layout |
-| Tablet | 768px | Grid 2 kolom |
-| Mobile | < 768px | Single column, full-width sidebar |
+Didistribusikan di bawah Lisensi MIT. Lihat `LICENSE` untuk informasi lebih lanjut.
 
 ---
 
-## Kontak
+## 📞 Kontak
 
-<p>
-  <a href="https://wa.me/628116638877">
-    <img src="https://img.shields.io/badge/WhatsApp-25D366?style=flat-square&logo=whatsapp&logoColor=white" alt="WhatsApp">
-  </a>
-  <a href="https://www.instagram.com/dmk_store_/">
-    <img src="https://img.shields.io/badge/Instagram-E4405F?style=flat-square&logo=instagram&logoColor=white" alt="Instagram">
-  </a>
-  <a href="https://web.facebook.com/JengSriDMK">
-    <img src="https://img.shields.io/badge/Facebook-1877F2?style=flat-square&logo=facebook&logoColor=white" alt="Facebook">
-  </a>
-</p>
+Sri Nofrianti - [@instagram_handle](https://www.instagram.com/dmk_store_/)
 
-**DMK Store**
-- Lokasi: Pasaman Barat, Sumatera Barat
-- WhatsApp: +62 811-6638-877
-- Instagram: [@dmk_store_](https://www.instagram.com/dmk_store_/)
+Project Link: [https://github.com/username/dmk-store](https://github.com/username/dmk-store)
 
 ---
 
-## Roadmap
-
-- [ ] Integrasi dengan backend/database
-- [ ] Sistem autentikasi user
-- [ ] Dashboard admin untuk kelola produk
-- [ ] Sistem promo dan diskon
-- [ ] Wishlist produk
-- [ ] Rating dan review
-
----
-
-## Kontribusi
-
-Kontribusi selalu diterima! Silakan buat Pull Request atau Issue untuk perbaikan dan fitur baru.
-
-```bash
-# Fork repository
-# Buat branch fitur
-git checkout -b feature/nama-fitur
-
-# Commit perubahan
-git commit -m "Add: nama fitur"
-
-# Push ke branch
-git push origin feature/nama-fitur
-
-# Buat Pull Request
-```
-
----
-
-## Lisensi
-Proyek ini dilisensikan di bawah **MIT License** - lihat file [LICENSE](LICENSE) untuk detail.
----
 <p align="center">
-  <strong>DMK Store</strong><br>
-  <em>Thrift Shop Terpercaya di Pasaman Barat</em><br><br>
-  Dibuat dengan ❤️ untuk komunitas thrift fashion Indonesia
+  Made with ❤️ by <strong>DMK Store Team</strong>
+  <br><br>
+  <img src="https://forthebadge.com/images/badges/built-with-love.svg" alt="ForTheBadge">
 </p>
+```
