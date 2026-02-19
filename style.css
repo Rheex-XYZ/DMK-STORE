@@ -40,7 +40,8 @@ body {
   height: 100%;
   pointer-events: none;
   z-index: 0;
-  background-image: radial-gradient(
+  background-image:
+    radial-gradient(
       ellipse at 20% 20%,
       rgba(212, 175, 55, 0.08) 0%,
       transparent 50%
@@ -60,10 +61,8 @@ body {
   height: 100%;
   pointer-events: none;
   z-index: 0;
-  background-image: linear-gradient(
-      rgba(212, 175, 55, 0.03) 1px,
-      transparent 1px
-    ),
+  background-image:
+    linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
   background-size: 50px 50px;
 }
@@ -523,7 +522,9 @@ body {
 .product-card:hover {
   transform: translateY(-10px);
   border-color: var(--gold-primary);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(212, 175, 55, 0.1);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(212, 175, 55, 0.1);
 }
 
 .product-card::before {
@@ -1220,13 +1221,18 @@ body.menu-open .logo,
 body.menu-open .cart-btn {
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
 }
 
 /* Pastikan elemen tersebut memiliki transisi saat normal pun */
 .logo,
 .cart-btn {
-  transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease,
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease,
+    transform 0.3s ease,
     background 0.3s ease;
 }
 
@@ -1644,4 +1650,28 @@ body.menu-open .cart-btn {
 .product-actions .btn-buy {
   font-size: 0.8rem;
   padding: 0.7rem 0.5rem;
+}
+
+/* Menu Divider & Category Label */
+.menu-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 1rem 2rem;
+}
+
+.menu-category-label {
+  padding: 0.5rem 2rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-secondary);
+}
+
+.menu-item.sub-item {
+  padding-left: 3rem;
+  font-size: 0.9rem;
+}
+
+.menu-item svg {
+  flex-shrink: 0;
 }
