@@ -80,11 +80,9 @@ app.post("/api/upload", async (req, res) => {
     const apiKey = process.env.IMGBB_API_KEY;
 
     if (!apiKey) {
-      // Jika belum set API Key di Vercel, kembalikan error jelas
       return res.status(500).json({
         success: false,
-        message:
-          "Server Error: IMGBB_API_KEY belum diset di Vercel Environment Variables.",
+        message: "Server Error: IMGBB_API_KEY belum diset.",
       });
     }
 
@@ -104,9 +102,14 @@ app.post("/api/upload", async (req, res) => {
     const result = await response.json();
 
     if (result.success) {
+      // PERBAIKAN PENTING DI SINI:
+      // Kita ambil 'image.url' (Direct Link ke file .jpg), BUKAN 'url' (Link halaman web).
+      // Direct link biasanya formatnya: https://i.ibb.co/xxxxx/namafile.jpg
+      const directUrl = result.data.image.url;
+
       res.json({
         success: true,
-        url: result.data.url,
+        url: directUrl, // Kirim direct URL ke frontend
       });
     } else {
       throw new Error(result.error.message || "Gagal upload ke ImgBB");
@@ -118,6 +121,7 @@ app.post("/api/upload", async (req, res) => {
       .json({ success: false, message: "Upload gagal: " + err.message });
   }
 });
+// ==================================================================
 // ==================================================================
 
 // 2. Get Semua Produk (Dinamis)
