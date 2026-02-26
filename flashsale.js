@@ -80,7 +80,7 @@ function updateCountdown() {
     );
 }
 
-// ==================== KERANJANG ====================
+// ==================== FUNGSI KERANJANG ====================
 function loadCart() {
   const savedCart = localStorage.getItem("dmk_cart");
   if (savedCart) {
@@ -93,22 +93,24 @@ function saveCart() {
   updateCartUI();
 }
 
+// ========== PERBAIKAN UTAMA ADA DI SINI ==========
 function addToCart(productId) {
   const product = flashSaleProducts.find((p) => p.id === productId);
   if (!product || product.stock <= 0) return;
-  if (cart.find((item) => item.id === productId)) {
-    showToast("Sudah ada di keranjang");
+  const existingItem = cart.find((item) => item.id === productId);
+  if (existingItem) {
+    showToast("Produk sudah ada di keranjang");
     return;
   }
-
   cart.push({
     id: product.id,
     name: product.name,
-    price: product.price,
-    image: product.images ? product.images[0] : "",
+    price: product.price, // UBAH: Pakai 'price' (bukan salePrice) karena itu nama field di DB
+    image: product.images ? product.images[0] : "", // UBAH: Safety check
+    isFlashSale: true,
   });
   saveCart();
-  showToast("Ditambahkan ke keranjang");
+  showToast("Produk ditambahkan ke keranjang");
 }
 
 function removeFromCart(productId) {
@@ -130,9 +132,8 @@ function updateCartUI() {
     badge.classList.add("visible");
     footer.style.display = "block";
     empty.style.display = "none";
-    total.textContent = formatPrice(
-      cart.reduce((sum, item) => sum + item.price, 0),
-    );
+    const totalPrice = cart.reduce((sum, item) => sum + item.price, 0);
+    total.textContent = formatPrice(totalPrice);
   } else {
     badge.classList.remove("visible");
     footer.style.display = "none";
@@ -145,7 +146,8 @@ function renderCartItems() {
   const container = document.getElementById("cartItems");
   const emptyEl = document.getElementById("cartEmpty");
   if (!container) return;
-  container.querySelectorAll(".cart-item").forEach((item) => item.remove());
+  const existingItems = container.querySelectorAll(".cart-item");
+  existingItems.forEach((item) => item.remove());
   if (cart.length === 0) {
     emptyEl.style.display = "flex";
     return;
@@ -155,9 +157,10 @@ function renderCartItems() {
     const itemEl = document.createElement("div");
     itemEl.className = "cart-item";
     itemEl.innerHTML = `
-      <div class="cart-item-image"><img src="${item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/80'"></div>
+      <div class="cart-item-image"><img src="${item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/80x80/1a1a1a/d4af37?text=DMK'"></div>
       <div class="cart-item-info"><h4 class="cart-item-name">${item.name}</h4><span class="cart-item-price">${formatPrice(item.price)}</span></div>
-      <button class="cart-item-remove" onclick="removeFromCart(${item.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>`;
+      <button class="cart-item-remove" onclick="removeFromCart(${item.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    `;
     container.appendChild(itemEl);
   });
 }
@@ -173,31 +176,34 @@ function toggleCart() {
     : "";
 }
 
-// ==================== MODAL CHECKOUT ====================
+// ==================== FUNGSI MODAL CHECKOUT ====================
 function openCheckoutModal() {
-  const summary = document.getElementById("modalOrderSummary");
-  const totalEl = document.getElementById("modalTotalPrice");
+  const summaryContainer = document.getElementById("modalOrderSummary");
+  const totalPriceEl = document.getElementById("modalTotalPrice");
   const modal = document.getElementById("checkoutModal");
   const overlay = document.getElementById("checkoutModalOverlay");
-  let html = "";
+  let summaryHTML = "";
   let total = 0;
   cart.forEach((item) => {
-    html += `<div class="summary-item"><span>${item.name}</span><span>${formatPrice(item.price)}</span></div>`;
+    summaryHTML += `<div class="summary-item"><span>${item.name}</span><span>${formatPrice(item.price)}</span></div>`;
     total += item.price;
   });
-  summary.innerHTML = html;
-  totalEl.textContent = formatPrice(total);
+  summaryContainer.innerHTML = summaryHTML;
+  totalPriceEl.textContent = formatPrice(total);
   modal.classList.add("active");
   overlay.classList.add("active");
   document.body.style.overflow = "hidden";
 }
+
 function closeCheckoutModal() {
-  document.getElementById("checkoutModal").classList.remove("active");
-  document.getElementById("checkoutModalOverlay").classList.remove("active");
+  const modal = document.getElementById("checkoutModal");
+  const overlay = document.getElementById("checkoutModalOverlay");
+  modal.classList.remove("active");
+  overlay.classList.remove("active");
   document.body.style.overflow = "";
 }
 
-async function confirmCheckout() {
+function confirmCheckout() {
   const selectedPayment = document.querySelector(
     'input[name="paymentMethod"]:checked',
   );
@@ -205,80 +211,76 @@ async function confirmCheckout() {
     showToast("Pilih metode pembayaran");
     return;
   }
-
   const method = selectedPayment.value;
-  const bankInfo =
-    method === "bsi"
-      ? { name: "Bank BSI", rekening: "7145183485", atasNama: "Sri Nofrianti" }
-      : {
-          name: "Bank Nagari",
-          rekening: "12010210069933",
-          atasNama: "Sri Nofrianti",
-        };
+  let bankInfo = {};
+  if (method === "bsi")
+    bankInfo = {
+      name: "Bank BSI",
+      rekening: "7145183485",
+      atasNama: "Sri Nofrianti",
+    };
+  else if (method === "nagari")
+    bankInfo = {
+      name: "Bank Nagari",
+      rekening: "12010210069933",
+      atasNama: "Sri Nofrianti",
+    };
 
-  // Update Stok
-  try {
-    const res = await fetch("/api/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        items: cart.map((i) => ({ id: i.id, quantity: 1 })),
-      }),
-    });
-    const result = await res.json();
-    if (!result.success) {
-      showToast("Error: " + (result.message || "Gagal update stok"));
-      return;
-    }
-  } catch (e) {
-    showToast("Gagal koneksi server");
-    return;
-  }
-
-  // WhatsApp
   let message = `Halo Kak, saya mau order dari DMK Store:\n\n`;
   cart.forEach((item, index) => {
-    message += `${index + 1}. ${item.name} - ${formatPrice(item.price)}\n   Link: ${item.image}\n`;
+    message += `${index + 1}. ${item.name} - ${formatPrice(item.price)}\n`;
+    message += `   Link Foto: ${item.image}\n`;
   });
-  message += `\n*Total: ${formatPrice(cart.reduce((s, i) => s + i.price, 0))}*\n\n*Pembayaran:*\n${bankInfo.name}\n${bankInfo.rekening}\na.n ${bankInfo.atasNama}\n\nTerima kasih!`;
+  const total = cart.reduce((sum, item) => sum + item.price, 0);
+  message += `\n*Total: ${formatPrice(total)}*\n\n`;
+  message += `*Metode Pembayaran:*\n${bankInfo.name}\nNo Rek: ${bankInfo.rekening}\na.n ${bankInfo.atasNama}\n\n`;
+  message += `Mohon konfirmasi ketersediaan. Terima kasih!`;
   window.open(
     `https://wa.me/628116638877?text=${encodeURIComponent(message)}`,
     "_blank",
   );
-
+  closeCheckoutModal();
   cart = [];
   saveCart();
-  closeCheckoutModal();
   toggleCart();
-  fetchFlashSaleProducts(); // Refresh
-  showToast("Checkout berhasil!");
 }
 
 function checkoutAll() {
   if (cart.length === 0) {
-    showToast("Keranjang kosong");
+    showToast("Keranjang masih kosong");
     return;
   }
   openCheckoutModal();
 }
-function buyNow(id) {
-  const p = flashSaleProducts.find((x) => x.id === id);
-  if (!p || p.stock <= 0) return;
-  if (!cart.find((i) => i.id === id)) {
-    cart.push({ id: p.id, name: p.name, price: p.price, image: p.images[0] });
+
+// ==================== FUNGSI BELI ====================
+function buyNow(productId) {
+  const product = flashSaleProducts.find((p) => p.id === productId);
+  if (!product || product.stock <= 0) return;
+  const isInCart = cart.some((item) => item.id === productId);
+  if (!isInCart) {
+    cart.push({
+      id: product.id,
+      name: product.name,
+      price: product.price, // UBAH: Pakai 'price'
+      image: product.images ? product.images[0] : "",
+    });
     saveCart();
   }
   openCheckoutModal();
 }
+
 function toggleMenu() {
-  const s = document.getElementById("sidebar");
-  const o = document.getElementById("sidebarOverlay");
-  const b = document.querySelector(".burger-btn");
-  if (!s) return;
-  s.classList.toggle("active");
-  o.classList.toggle("active");
-  b.classList.toggle("active");
-  document.body.style.overflow = s.classList.contains("active") ? "hidden" : "";
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebarOverlay");
+  const btn = document.querySelector(".burger-btn");
+  if (!sidebar) return;
+  sidebar.classList.toggle("active");
+  overlay.classList.toggle("active");
+  btn.classList.toggle("active");
+  document.body.style.overflow = sidebar.classList.contains("active")
+    ? "hidden"
+    : "";
 }
 
 // ==================== RENDER PRODUK ====================
@@ -298,25 +300,30 @@ async function fetchFlashSaleProducts() {
 function renderFlashSaleProducts() {
   const grid = document.getElementById("flashSaleGrid");
   if (!grid) return;
+
   if (flashSaleProducts.length === 0) {
     grid.innerHTML =
-      "<p class='text-gray-500 col-span-2'>Belum ada produk.</p>";
+      "<p class='text-gray-500 col-span-2 text-center'>Belum ada produk Flash Sale.</p>";
     return;
   }
+
   grid.innerHTML = "";
   flashSaleProducts.forEach((product) => {
     const card = document.createElement("div");
     card.className = "flash-card";
     const isOutOfStock = product.stock <= 0;
+    const discount = product.discount || 0;
+    // Safety check gambar
     const imgSrc =
       product.images && product.images[0]
         ? product.images[0]
-        : "https://via.placeholder.com/400";
+        : "https://via.placeholder.com/400?text=No+Image";
+
     card.innerHTML = `
       <div class="flash-image-container">
         <span class="flash-tag">Flash Sale</span>
-        <span class="discount-badge">-${product.discount || 0}%</span>
-        <img src="${imgSrc}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/400'">
+        <span class="discount-badge">-${discount}%</span>
+        <img src="${imgSrc}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/400x400/1a1a1a/ef4444?text=Error'">
       </div>
       <div class="flash-card-info">
         <h3 class="flash-card-name">${product.name}</h3>
@@ -326,27 +333,32 @@ function renderFlashSaleProducts() {
           <span class="flash-price-sale">${formatPrice(product.price)}</span>
         </div>
         <p class="flash-stock ${isOutOfStock ? "out-of-stock" : "available"}">${isOutOfStock ? "Stok Habis!" : `Tersisa ${product.stock}`}</p>
-        <div class="stock-progress"><div class="stock-progress-bar" style="width: ${product.stock > 0 ? 50 : 0}%"></div></div>
+        <div class="stock-progress"><div class="stock-progress-bar" style="width: ${product.stock > 0 ? (product.stock / (product.totalStock || product.stock)) * 100 : 0}%"></div></div>
         <div class="flash-card-actions">
           <button class="flash-btn-cart" onclick="addToCart(${product.id})" ${isOutOfStock ? "disabled" : ""}>Keranjang</button>
           <button class="flash-btn-buy" onclick="buyNow(${product.id})" ${isOutOfStock ? "disabled" : ""}>Beli</button>
         </div>
-      </div>`;
+      </div>
+    `;
     grid.appendChild(card);
   });
 }
 
 // ==================== UTILITY ====================
 function formatPrice(price) {
+  // Pastikan price adalah angka, jika undefined/NaN kembalikan 0
   if (!price || isNaN(price)) return "Rp 0";
   return "Rp " + price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
+
 function showToast(message) {
-  const t = document.getElementById("toast");
-  const tm = document.getElementById("toastMessage");
-  if (t && tm) {
-    tm.textContent = message;
-    t.classList.add("show");
-    setTimeout(() => t.classList.remove("show"), 3000);
+  const toast = document.getElementById("toast");
+  const toastMessage = document.getElementById("toastMessage");
+  if (toast && toastMessage) {
+    toastMessage.textContent = message;
+    toast.classList.add("show");
+    setTimeout(() => {
+      toast.classList.remove("show");
+    }, 3000);
   }
 }
