@@ -22,6 +22,10 @@ async function fetchProducts() {
     if (!response.ok) throw new Error("Gagal memuat data");
 
     products = await response.json();
+
+    // RENDER MENU KATEGORI OTOMATIS SETELAH DATA DITERIMA
+    renderCategoryMenu();
+
     renderProducts(currentCategory);
   } catch (error) {
     console.error("Error:", error);
@@ -30,6 +34,43 @@ async function fetchProducts() {
       grid.innerHTML = `<div class="text-center py-12 col-span-full text-red-500">Gagal memuat data produk. Coba refresh halaman.</div>`;
     }
   }
+}
+
+// ==================== RENDER KATEGORI DINAMIS (BARU) ====================
+function renderCategoryMenu() {
+  const container = document.getElementById("categoryMenuContainer");
+  if (!container) return;
+
+  // Ekstrak kategori unik dari produk yang sudah di-fetch
+  const categories = [
+    ...new Set(products.map((p) => p.category).filter((c) => c)),
+  ];
+
+  // Tambahkan opsi "Semua Produk" di awal
+  let html = `
+    <a
+      href="#"
+      class="menu-item sub-item ${currentCategory === "all" ? "active" : ""}"
+      data-category="all"
+      onclick="filterProducts('all'); return false;"
+    >Semua Produk</a>
+  `;
+
+  // Loop kategori dan buat link
+  categories.forEach((cat) => {
+    // Kapitalisasi huruf pertama untuk tampilan
+    const displayName = cat.charAt(0).toUpperCase() + cat.slice(1);
+    html += `
+      <a
+        href="#"
+        class="menu-item sub-item ${currentCategory === cat ? "active" : ""}"
+        data-category="${cat}"
+        onclick="filterProducts('${cat}'); return false;"
+      >${displayName}</a>
+    `;
+  });
+
+  container.innerHTML = html;
 }
 
 // ==================== FUNGSI KERANJANG ====================
@@ -190,21 +231,14 @@ function renderProducts(category) {
 
   if (!grid) return;
 
-  const categoryNames = {
-    all: "Semua Produk",
-    kaos: "Koleksi Kaos",
-    hoodie: "Koleksi Hoodie",
-    celana: "Koleksi Celana",
-    jeans: "Koleksi Jeans",
-    kemeja: "Koleksi Kemeja",
-    jaket: "Koleksi Jaket",
-    rok: "Koleksi Rok",
-    dress: "Koleksi Dress",
-  };
+  // Logika dinamis untuk judul
+  let displayTitle = "Semua Produk";
+  if (category !== "all") {
+    displayTitle = `Koleksi ${category.charAt(0).toUpperCase() + category.slice(1)}`;
+  }
 
-  if (tag) tag.textContent = categoryNames[category] || "Koleksi Kami";
-  if (title)
-    title.innerHTML = `<span class="highlight">${categoryNames[category] || "Produk"}</span>`;
+  if (tag) tag.textContent = "Koleksi Kami";
+  if (title) title.innerHTML = `<span class="highlight">${displayTitle}</span>`;
 
   let filteredProducts =
     category === "all"
@@ -309,12 +343,16 @@ function renderProducts(category) {
     });
   }, 100);
 
-  document.querySelectorAll(".menu-item").forEach((item) => {
-    item.classList.remove("active");
-    if (item.dataset.category === category) {
-      item.classList.add("active");
-    }
-  });
+  // Update active state untuk menu dinamis
+  document
+    .querySelectorAll("#categoryMenuContainer .menu-item")
+    .forEach((item) => {
+      if (item.dataset.category === category) {
+        item.classList.add("active");
+      } else {
+        item.classList.remove("active");
+      }
+    });
 
   closeMenu();
 }
@@ -370,7 +408,6 @@ function buyNow(productId) {
     return;
   }
 
-  // Buat item sementara tanpa menambahkan ke cart
   const itemToBuy = {
     id: product.id,
     name: product.name,
@@ -381,7 +418,6 @@ function buyNow(productId) {
         : "https://via.placeholder.com/400",
   };
 
-  // Buka modal dengan item tersebut, set flag fromCart = false
   openCheckoutModal([itemToBuy], false);
 }
 
@@ -390,7 +426,6 @@ function checkoutAll() {
     showToast("Keranjang masih kosong");
     return;
   }
-  // Buka modal dengan isi cart, set flag fromCart = true
   openCheckoutModal(cart, true);
 }
 
@@ -436,7 +471,6 @@ function closeCheckoutModal() {
   if (overlay) overlay.classList.remove("active");
   document.body.style.overflow = "";
 
-  // Reset variabel sementara
   currentCheckoutItems = [];
   isCheckoutFromCart = false;
 }
@@ -469,7 +503,6 @@ async function confirmCheckout() {
   }
 
   try {
-    // Gunakan currentCheckoutItems untuk update stok di server
     const checkoutData = {
       items: currentCheckoutItems.map((item) => ({
         id: item.id,
@@ -486,7 +519,6 @@ async function confirmCheckout() {
     const result = await response.json();
 
     if (result.success) {
-      // Susun pesan WA menggunakan currentCheckoutItems
       let message = `Halo Kak, saya mau order dari DMK Store:\n\n`;
       currentCheckoutItems.forEach((item, index) => {
         message += `${index + 1}. ${item.name} - ${formatPrice(item.price)}\n`;
@@ -505,7 +537,6 @@ async function confirmCheckout() {
         "_blank",
       );
 
-      // LOGIWA PENTING: Hanya kosongkan cart jika asalnya dari keranjang
       if (isCheckoutFromCart) {
         cart = [];
         saveCart();

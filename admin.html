@@ -201,22 +201,22 @@
               </div>
             </div>
 
+            <!-- ... kode sebelumnya ... -->
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="text-sm text-gray-400">Kategori</label>
-                <select
+                <!-- GANTI SELECT MENJADI INPUT + DATALIST -->
+                <input
+                  type="text"
                   id="category"
+                  list="categoryList"
                   class="w-full bg-gray-800 p-2 rounded mt-1 border border-gray-700 outline-none"
-                >
-                  <option value="kaos">Kaos</option>
-                  <option value="hoodie">Hoodie</option>
-                  <option value="celana">Celana</option>
-                  <option value="jeans">Jeans</option>
-                  <option value="kemeja">Kemeja</option>
-                  <option value="jaket">Jaket</option>
-                  <option value="rok">Rok</option>
-                  <option value="dress">Dress</option>
-                </select>
+                  placeholder="Pilih atau ketik baru"
+                  required
+                />
+                <datalist id="categoryList">
+                  <!-- Opsi akan diisi otomatis oleh JS -->
+                </datalist>
               </div>
               <div>
                 <label class="text-sm text-gray-400">Ukuran</label>
@@ -228,6 +228,7 @@
                 />
               </div>
             </div>
+            <!-- ... kode setelahnya ... -->
 
             <!-- BAGIAN GAMBAR DENGAN FITUR UPLOAD -->
             <div>

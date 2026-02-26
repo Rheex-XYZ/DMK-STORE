@@ -1,5 +1,5 @@
 // ================== ADMIN LOGIC ==================
-let currentType = "products"; // Default: products, flashsale, newrelease
+let currentType = "products";
 
 document.addEventListener("DOMContentLoaded", () => {
   const isLoggedIn = localStorage.getItem("dmk_admin_logged_in");
@@ -149,6 +149,9 @@ async function loadProducts() {
     const res = await fetch(`/api/${currentType}`);
     const products = await res.json();
 
+    // Panggil fungsi untuk update opsi kategori di form
+    populateCategoryOptions(products);
+
     if (products.length === 0) {
       listEl.innerHTML =
         '<p class="text-gray-500 col-span-2">Belum ada produk.</p>';
@@ -182,6 +185,44 @@ async function loadProducts() {
   }
 }
 
+// ================== FUNGSI BARU: OTOMATISASI KATEGORI ==================
+async function populateCategoryOptions(currentProducts) {
+  const datalist = document.getElementById("categoryList");
+  if (!datalist) return;
+
+  try {
+    // Ambil semua produk dari semua tipe untuk mendapatkan daftar kategori lengkap
+    // Kecuali currentProducts sudah cukup, tapi lebih baik ambil semua biar konsisten
+    const types = ["products", "flashsale", "newrelease"];
+    let allProducts = [];
+
+    // Jika ingin efisiensi, kita bisa cuma pakai currentProducts,
+    // tapi di sini kita fetch semua agar dropdown kategori selalu lengkap di semua tab
+    // (opsional: bisa disederhanakan hanya pakai currentProducts jika performa issue)
+
+    // Untuk simpelnya, kita fetch semua
+    const promises = types.map((type) =>
+      fetch(`/api/${type}`).then((r) => r.json()),
+    );
+    const results = await Promise.all(promises);
+    results.forEach((data) => {
+      if (Array.isArray(data)) allProducts = [...allProducts, ...data];
+    });
+
+    // Ekstrak kategori unik
+    const categories = [
+      ...new Set(allProducts.map((p) => p.category).filter((c) => c)),
+    ];
+
+    // Isi datalist
+    datalist.innerHTML = categories
+      .map((cat) => `<option value="${cat}">`)
+      .join("");
+  } catch (err) {
+    console.error("Gagal memuat opsi kategori", err);
+  }
+}
+
 async function saveProduct(e) {
   e.preventDefault();
 
@@ -190,7 +231,7 @@ async function saveProduct(e) {
     name: document.getElementById("name").value,
     price: parseInt(document.getElementById("price").value),
     stock: parseInt(document.getElementById("stock").value),
-    category: document.getElementById("category").value,
+    category: document.getElementById("category").value, // Ambil nilai dari input teks
     size: document.getElementById("size").value,
     image: document.getElementById("image").value,
     description: document.getElementById("description").value,
@@ -216,7 +257,7 @@ async function saveProduct(e) {
     if (data.success) {
       alert(id ? "Produk berhasil diupdate!" : "Produk berhasil ditambahkan!");
       resetForm();
-      loadProducts();
+      loadProducts(); // Load ulang untuk update opsi kategori juga
     } else {
       alert("ERROR: " + (data.message || "Gagal menyimpan produk"));
     }
@@ -236,7 +277,7 @@ async function editProduct(id) {
       document.getElementById("name").value = product.name;
       document.getElementById("price").value = product.price;
       document.getElementById("stock").value = product.stock;
-      document.getElementById("category").value = product.category;
+      document.getElementById("category").value = product.category; // Isi input kategori
       document.getElementById("size").value = product.size || "";
       document.getElementById("image").value = product.images
         ? product.images[0]
@@ -247,7 +288,6 @@ async function editProduct(id) {
         document.getElementById("originalPrice").value = product.originalPrice;
       }
 
-      // Tampilkan preview gambar saat edit
       const previewEl = document.getElementById("imagePreview");
       const previewImg = document.getElementById("previewImg");
       if (product.images && product.images[0]) {
@@ -283,7 +323,7 @@ async function deleteProduct(id) {
 function resetForm() {
   document.getElementById("productForm").reset();
   document.getElementById("productId").value = "";
-  document.getElementById("imagePreview").classList.add("hidden"); // Sembunyikan preview saat reset
+  document.getElementById("imagePreview").classList.add("hidden");
   const titles = {
     products: "Tambah Produk Utama",
     flashsale: "Tambah Flash Sale",
@@ -316,8 +356,6 @@ async function handleImageUpload(event) {
   }
 
   try {
-    // PANGGIL FUNGSI KOMPRESI
-    // Max lebar 800px, kualitas 80% (0.8)
     const compressedBase64 = await compressImage(file, 800, 0.8);
 
     statusEl.textContent = "Mengupload...";
@@ -346,7 +384,6 @@ async function handleImageUpload(event) {
   }
 }
 
-// FUNGSI HELPER KOMPRESI (CANVAS)
 function compressImage(file, maxWidth, quality) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
