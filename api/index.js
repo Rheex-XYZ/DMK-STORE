@@ -219,4 +219,32 @@ app.post("/api/checkout", async (req, res) => {
   }
 });
 
+// ==================== FLASH SALE SETTINGS ====================
+
+// Get Pengaturan Waktu
+app.get("/api/flashsale/settings", async (req, res) => {
+  try {
+    const settings = await readData("flashsale_settings");
+    res.json(settings || { endDate: null });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Gagal ambil pengaturan" });
+  }
+});
+
+// Simpan Pengaturan Waktu
+app.post("/api/flashsale/settings", async (req, res) => {
+  try {
+    const { endDate } = req.body;
+    // Simpan objek { endDate: "ISO_STRING" }
+    await writeData("flashsale_settings", { endDate });
+    res.json({ success: true, message: "Waktu flash sale diperbarui" });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ success: false, message: "Gagal simpan pengaturan" });
+  }
+});
+
+// ===============================================================
+
 export default app;

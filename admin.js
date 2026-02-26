@@ -53,7 +53,7 @@ function logout() {
   location.reload();
 }
 
-// Switch Tab (Products / Flash Sale / New Release)
+// ================== SWITCH TAB (MODIFIED) ==================
 function switchTab(type) {
   currentType = type;
 
@@ -63,12 +63,17 @@ function switchTab(type) {
     .forEach((btn) => btn.classList.remove("active"));
   document.getElementById(`tab-${type}`).classList.add("active");
 
-  // Show/Hide Harga Asli field (only for Flash Sale)
+  // Show/Hide Timer Settings & Original Price Field
+  const timerSettings = document.getElementById("flashSaleTimerSettings");
   const originalPriceField = document.getElementById("field-originalPrice");
+
   if (type === "flashsale") {
+    timerSettings.classList.remove("hidden"); // TAMPILKAN TIMER SETTINGS
     originalPriceField.classList.remove("hidden");
     document.getElementById("originalPrice").required = true;
+    loadFlashSaleSettings(); // Load waktu saat tab flash sale dibuka
   } else {
+    timerSettings.classList.add("hidden"); // SEMBUNYIKAN TIMER SETTINGS
     originalPriceField.classList.add("hidden");
     document.getElementById("originalPrice").required = false;
   }
@@ -86,13 +91,70 @@ function switchTab(type) {
   loadProducts();
 }
 
-// Load Produk dari Server
+// ================== FLASH SALE SETTINGS LOGIC ==================
+async function loadFlashSaleSettings() {
+  try {
+    const res = await fetch("/api/flashsale/settings");
+    const settings = await res.json();
+
+    const inputEl = document.getElementById("flashSaleEndTime");
+    const infoEl = document.getElementById("currentEndTime");
+
+    if (settings.endDate) {
+      const dateObj = new Date(settings.endDate);
+      // Format to datetime-local input (YYYY-MM-DDTHH:MM)
+      // We adjust for timezone offset so the input shows local time correctly
+      const localDate = new Date(
+        dateObj.getTime() - dateObj.getTimezoneOffset() * 60000,
+      )
+        .toISOString()
+        .slice(0, 16);
+
+      inputEl.value = localDate;
+      infoEl.textContent = `Jadwal saat ini: ${dateObj.toLocaleString("id-ID")}`;
+    } else {
+      inputEl.value = "";
+      infoEl.textContent = "Belum ada jadwal ditetapkan.";
+    }
+  } catch (err) {
+    console.error("Gagal load settings", err);
+  }
+}
+
+async function saveFlashSaleSettings() {
+  const inputVal = document.getElementById("flashSaleEndTime").value;
+  if (!inputVal) {
+    alert("Pilih tanggal dan waktu terlebih dahulu!");
+    return;
+  }
+
+  // Convert input to ISO string
+  const isoDate = new Date(inputVal).toISOString();
+
+  try {
+    const res = await fetch("/api/flashsale/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endDate: isoDate }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert("Jadwal flash sale berhasil disimpan!");
+      loadFlashSaleSettings(); // Refresh info text
+    } else {
+      alert("Gagal menyimpan jadwal.");
+    }
+  } catch (err) {
+    alert("Error koneksi: " + err.message);
+  }
+}
+
+// ================== PRODUCT CRUD ==================
 async function loadProducts() {
   const listEl = document.getElementById("productList");
   listEl.innerHTML = '<p class="text-gray-500">Memuat produk...</p>';
 
   try {
-    // Panggil API dinamis: /api/products, /api/flashsale, dll
     const res = await fetch(`/api/${currentType}`);
     const products = await res.json();
 
@@ -124,10 +186,11 @@ async function loadProducts() {
       .join("");
   } catch (err) {
     console.error(err);
+    listEl.innerHTML =
+      '<p class="text-red-500 col-span-2">Gagal memuat data.</p>';
   }
 }
 
-// Save Product (Add or Update)
 async function saveProduct(e) {
   e.preventDefault();
 
@@ -142,7 +205,6 @@ async function saveProduct(e) {
     description: document.getElementById("description").value,
   };
 
-  // Jika Flash Sale, tambahkan harga asli
   if (currentType === "flashsale") {
     productData.originalPrice = parseInt(
       document.getElementById("originalPrice").value,
@@ -172,7 +234,6 @@ async function saveProduct(e) {
   }
 }
 
-// Edit: Isi form dengan data yang ada
 async function editProduct(id) {
   try {
     const res = await fetch(`/api/${currentType}`);
@@ -191,7 +252,6 @@ async function editProduct(id) {
         : "";
       document.getElementById("description").value = product.description || "";
 
-      // Handle Flash Sale specific
       if (currentType === "flashsale" && product.originalPrice) {
         document.getElementById("originalPrice").value = product.originalPrice;
       }
@@ -205,7 +265,6 @@ async function editProduct(id) {
   }
 }
 
-// Delete
 async function deleteProduct(id) {
   if (confirm("Yakin ingin menghapus produk ini?")) {
     try {

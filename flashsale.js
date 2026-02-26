@@ -1,56 +1,68 @@
-// HAPUS const flashSaleProducts = [...] (hardcode)
+// ==================== FLASH SALE DATA ====================
+let flashSaleProducts = [];
+let FLASH_SALE_END = new Date(); // Default, akan di-update dari server
+let cart = [];
 
-let flashSaleProducts = []; // Buat variabel kosong
-
-// Ganti fungsi DOMContentLoaded menjadi:
+// ==================== INITIALIZATION ====================
 document.addEventListener("DOMContentLoaded", function () {
   loadCart();
-  initCountdown();
-  // Panggil fungsi fetch data
-  fetchFlashSaleProducts();
+  initApp(); // Urutan: Load Settings -> Countdown -> Products
 });
 
-// Tambahkan fungsi baru ini
-async function fetchFlashSaleProducts() {
-  try {
-    const res = await fetch("/api/flashsale");
-    if (res.ok) {
-      flashSaleProducts = await res.json();
-      renderFlashSaleProducts(); // Render ulang setelah data datang
-    } else {
-      console.error("Gagal memuat flash sale");
-    }
-  } catch (err) {
-    console.error("Error:", err);
-  }
+async function initApp() {
+  await loadFlashSaleSettings(); // 1. Load waktu dari server dulu
+  initCountdown(); // 2. Mulai countdown
+  fetchFlashSaleProducts(); // 3. Load produk
 }
 
-// Fungsi lainnya tetap sama...
+// ==================== LOAD SETTINGS ====================
+async function loadFlashSaleSettings() {
+  try {
+    const res = await fetch("/api/flashsale/settings");
+    const settings = await res.json();
+    if (settings.endDate) {
+      FLASH_SALE_END = new Date(settings.endDate);
+    } else {
+      // Jika belum ada jadwal, set ke masa lalu agar status "Sale Ended"
+      FLASH_SALE_END = new Date(2020, 0, 1);
+    }
+  } catch (err) {
+    console.error("Gagal load waktu flash sale", err);
+  }
+}
 
 // ==================== COUNTDOWN ====================
 function initCountdown() {
   updateCountdown();
   setInterval(updateCountdown, 1000);
 }
+
 function updateCountdown() {
   const now = new Date().getTime();
   const endTime = FLASH_SALE_END.getTime();
   const distance = endTime - now;
+
   const countdownContainer = document.getElementById("countdownContainer");
   const productsSection = document.getElementById("flashProductsSection");
+
   if (distance < 0) {
     if (countdownContainer) countdownContainer.style.display = "none";
     if (productsSection)
       productsSection.innerHTML =
-        "<div class='flash-empty-state'><h3>Flash Sale Berakhir</h3></div>";
+        "<div class='flash-empty-state'><h3>Flash Sale Berakhir</h3><p>Simpan jadwal baru di Admin Panel untuk memulai.</p></div>";
     return;
   }
+
+  // Tampilkan container jika sebelumnya tersembunyi
+  if (countdownContainer) countdownContainer.style.display = "inline-block";
+
   const days = Math.floor(distance / (1000 * 60 * 60 * 24));
   const hours = Math.floor(
     (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
   );
   const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
   if (document.getElementById("days"))
     document.getElementById("days").textContent = String(days).padStart(2, "0");
   if (document.getElementById("hours"))
@@ -213,7 +225,7 @@ function confirmCheckout() {
   let message = `Halo Kak, saya mau order dari DMK Store:\n\n`;
   cart.forEach((item, index) => {
     message += `${index + 1}. ${item.name} - ${formatPrice(item.price)}\n`;
-    message += `   Link Foto: ${item.image}\n`; // LINK GAMBAR DITAMBAHKAN
+    message += `   Link Foto: ${item.image}\n`;
   });
   const total = cart.reduce((sum, item) => sum + item.price, 0);
   message += `\n*Total: ${formatPrice(total)}*\n\n`;
@@ -267,8 +279,23 @@ function toggleMenu() {
 }
 
 // ==================== RENDER PRODUK ====================
+async function fetchFlashSaleProducts() {
+  const grid = document.getElementById("flashSaleGrid");
+  try {
+    const res = await fetch("/api/flashsale");
+    if (res.ok) {
+      flashSaleProducts = await res.json();
+      renderFlashSaleProducts();
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
 function renderFlashSaleProducts() {
   const grid = document.getElementById("flashSaleGrid");
+  if (!grid) return;
+
   if (flashSaleProducts.length === 0) {
     grid.style.display = "none";
     return;
@@ -278,19 +305,24 @@ function renderFlashSaleProducts() {
     const card = document.createElement("div");
     card.className = "flash-card";
     const isOutOfStock = product.stock <= 0;
-    const stockPercentage = (product.stock / product.totalStock) * 100;
+    // Hitung ulang diskon jika perlu, atau pakai dari DB
+    const discount = product.discount || 0;
+    const stockPercentage = product.totalStock
+      ? (product.stock / product.totalStock) * 100
+      : 50;
+
     card.innerHTML = `
       <div class="flash-image-container">
         <span class="flash-tag">Flash Sale</span>
-        <span class="discount-badge">-${product.discount}%</span>
+        <span class="discount-badge">-${discount}%</span>
         <img src="${product.images[0]}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/400x400/1a1a1a/ef4444?text=SALE'">
       </div>
       <div class="flash-card-info">
         <h3 class="flash-card-name">${product.name}</h3>
-        <div class="flash-card-meta"><span>Ukuran: ${product.size}</span></div>
+        <div class="flash-card-meta"><span>Ukuran: ${product.size || "-"}</span></div>
         <div class="flash-price-section">
-          <span class="flash-price-original">${formatPrice(product.originalPrice)}</span>
-          <span class="flash-price-sale">${formatPrice(product.salePrice)}</span>
+          <span class="flash-price-original">${product.originalPrice ? formatPrice(product.originalPrice) : ""}</span>
+          <span class="flash-price-sale">${formatPrice(product.price)}</span>
         </div>
         <p class="flash-stock ${isOutOfStock ? "out-of-stock" : "available"}">${isOutOfStock ? "Stok Habis!" : `Tersisa ${product.stock}`}</p>
         <div class="stock-progress"><div class="stock-progress-bar" style="width: ${stockPercentage}%"></div></div>

@@ -109,6 +109,46 @@
         <div
           class="lg:col-span-1 bg-gray-900 p-6 rounded-xl border border-gray-800 h-fit sticky top-20"
         >
+          <!-- BLOK BARU: PENGATURAN WAKTU FLASH SALE -->
+          <div
+            id="flashSaleTimerSettings"
+            class="mb-6 p-4 bg-gray-800 rounded-lg border border-dashed border-yellow-500 hidden"
+          >
+            <h3 class="text-yellow-500 font-bold mb-3 flex items-center gap-2">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              Pengaturan Waktu Flash Sale
+            </h3>
+            <div class="space-y-2">
+              <label class="text-xs text-gray-400"
+                >Tanggal & Jam Berakhir</label
+              >
+              <input
+                type="datetime-local"
+                id="flashSaleEndTime"
+                class="w-full bg-gray-700 p-2 rounded border border-gray-600 text-white"
+              />
+              <button
+                type="button"
+                onclick="saveFlashSaleSettings()"
+                class="w-full bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-2 rounded text-sm mt-2"
+              >
+                Simpan Jadwal
+              </button>
+              <p id="currentEndTime" class="text-xs text-gray-500 mt-2"></p>
+            </div>
+          </div>
+          <!-- AKHIR BLOK BARU -->
+
           <h2 class="text-lg font-bold mb-4" id="formTitle">
             Tambah Produk Baru
           </h2>
