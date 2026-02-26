@@ -55,7 +55,7 @@ const writeData = async (key, data) => {
 
 // ==================== ROUTES ====================
 
-// 1. Login Admin (Logika ada di sini, tidak perlu file terpisah)
+// 1. Login Admin
 app.post("/api/login", (req, res) => {
   const { username, password } = req.body;
   if (username === "dmkstore" && password === "dmkstore") {
@@ -66,7 +66,7 @@ app.post("/api/login", (req, res) => {
     .json({ success: false, message: "Username atau password salah" });
 });
 
-// ==================== FITUR UPLOAD GAMBAR ====================
+// 2. Upload Gambar
 app.post("/api/upload", async (req, res) => {
   try {
     const { image } = req.body;
@@ -80,7 +80,6 @@ app.post("/api/upload", async (req, res) => {
     const apiKey = process.env.IMGBB_API_KEY;
 
     if (!apiKey) {
-      // Jika belum set API Key di Vercel, kembalikan error jelas
       return res.status(500).json({
         success: false,
         message:
@@ -118,9 +117,67 @@ app.post("/api/upload", async (req, res) => {
       .json({ success: false, message: "Upload gagal: " + err.message });
   }
 });
-// ==================================================================
 
-// 2. Get Semua Produk (Dinamis)
+// ==================== PERBAIKAN URUTAN RUTE ====================
+// RUTE SPESIFIK HARUS DI ATAS RUTE DINAMIS (/api/:type)
+
+// 6. Checkout (DIPINDAHKAN KE ATAS)
+app.post("/api/checkout", async (req, res) => {
+  try {
+    const { items } = req.body;
+
+    // Validasi input
+    if (!items || !Array.isArray(items)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Data items tidak valid" });
+    }
+
+    for (const item of items) {
+      const types = ["products", "flashsale", "newrelease"];
+      for (const type of types) {
+        let data = await readData(type);
+        const idx = data.findIndex((p) => p.id === item.id);
+        if (idx !== -1) {
+          data[idx].stock = Math.max(0, (data[idx].stock || 0) - item.quantity);
+          await writeData(type, data);
+          break;
+        }
+      }
+    }
+    res.json({ success: true, message: "Checkout sukses" });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ success: false, message: "Gagal checkout: " + err.message });
+  }
+});
+
+// Flash Sale Settings (DIPINDAHKAN KE ATAS)
+app.get("/api/flashsale/settings", async (req, res) => {
+  try {
+    const settings = await readData("flashsale_settings");
+    res.json(settings || { endDate: null });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Gagal ambil pengaturan" });
+  }
+});
+
+app.post("/api/flashsale/settings", async (req, res) => {
+  try {
+    const { endDate } = req.body;
+    await writeData("flashsale_settings", { endDate });
+    res.json({ success: true, message: "Waktu flash sale diperbarui" });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ success: false, message: "Gagal simpan pengaturan" });
+  }
+});
+
+// ==================== RUTE DINAMIS (DITEMPATKAN PALING BAWAH) ====================
+
+// 3. Get Semua Produk (Dinamis)
 app.get("/api/:type", async (req, res) => {
   try {
     const type = req.params.type;
@@ -138,12 +195,14 @@ app.get("/api/:type", async (req, res) => {
   }
 });
 
-// 3. Tambah Produk Baru (Dinamis)
+// 4. Tambah Produk Baru (Dinamis)
 app.post("/api/:type", async (req, res) => {
   try {
     const type = req.params.type;
     if (!["products", "flashsale", "newrelease"].includes(type))
-      return res.status(400).json({ success: false });
+      return res
+        .status(400)
+        .json({ success: false, message: "Tipe produk tidak valid" });
 
     const products = await readData(type);
     let images = [];
@@ -175,7 +234,7 @@ app.post("/api/:type", async (req, res) => {
   }
 });
 
-// 4. Edit Produk (Dinamis)
+// 5. Edit Produk (Dinamis)
 app.put("/api/:type/:id", async (req, res) => {
   try {
     const type = req.params.type;
@@ -223,52 +282,6 @@ app.delete("/api/:type/:id", async (req, res) => {
     res
       .status(500)
       .json({ success: false, message: "Gagal hapus: " + err.message });
-  }
-});
-
-// 6. Checkout
-app.post("/api/checkout", async (req, res) => {
-  try {
-    const { items } = req.body;
-    for (const item of items) {
-      const types = ["products", "flashsale", "newrelease"];
-      for (const type of types) {
-        let data = await readData(type);
-        const idx = data.findIndex((p) => p.id === item.id);
-        if (idx !== -1) {
-          data[idx].stock = Math.max(0, (data[idx].stock || 0) - item.quantity);
-          await writeData(type, data);
-          break;
-        }
-      }
-    }
-    res.json({ success: true, message: "Checkout sukses" });
-  } catch (err) {
-    res
-      .status(500)
-      .json({ success: false, message: "Gagal checkout: " + err.message });
-  }
-});
-
-// ==================== FLASH SALE SETTINGS ====================
-app.get("/api/flashsale/settings", async (req, res) => {
-  try {
-    const settings = await readData("flashsale_settings");
-    res.json(settings || { endDate: null });
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Gagal ambil pengaturan" });
-  }
-});
-
-app.post("/api/flashsale/settings", async (req, res) => {
-  try {
-    const { endDate } = req.body;
-    await writeData("flashsale_settings", { endDate });
-    res.json({ success: true, message: "Waktu flash sale diperbarui" });
-  } catch (err) {
-    res
-      .status(500)
-      .json({ success: false, message: "Gagal simpan pengaturan" });
   }
 });
 
