@@ -1,5 +1,5 @@
 // ================== ADMIN LOGIC ==================
-let currentType = "products"; // Default: products, flashsale, newrelease
+let currentType = "products";
 
 document.addEventListener("DOMContentLoaded", () => {
   const isLoggedIn = localStorage.getItem("dmk_admin_logged_in");
@@ -19,6 +19,7 @@ function showDashboard() {
   document.getElementById("loginModal").classList.add("hidden");
   document.getElementById("dashboard").classList.remove("hidden");
   loadProducts();
+  loadCategories(); // LOAD KATEGORI SAAT DASHBOARD MUNCUL
 }
 
 // Handle Login
@@ -56,7 +57,6 @@ function logout() {
 // ================== SWITCH TAB ==================
 function switchTab(type) {
   currentType = type;
-
   document
     .querySelectorAll(".tab-btn")
     .forEach((btn) => btn.classList.remove("active"));
@@ -88,12 +88,25 @@ function switchTab(type) {
   loadProducts();
 }
 
+// ================== LOAD KATEGORI (BARU) ==================
+async function loadCategories() {
+  try {
+    const res = await fetch("/api/categories");
+    const categories = await res.json();
+    const datalist = document.getElementById("categoryList");
+    datalist.innerHTML = categories
+      .map((cat) => `<option value="${cat}">`)
+      .join("");
+  } catch (err) {
+    console.error("Gagal memuat kategori", err);
+  }
+}
+
 // ================== FLASH SALE SETTINGS ==================
 async function loadFlashSaleSettings() {
   try {
     const res = await fetch("/api/flashsale/settings");
     const settings = await res.json();
-
     const inputEl = document.getElementById("flashSaleEndTime");
     const infoEl = document.getElementById("currentEndTime");
 
@@ -118,7 +131,7 @@ async function loadFlashSaleSettings() {
 async function saveFlashSaleSettings() {
   const inputVal = document.getElementById("flashSaleEndTime").value;
   if (!inputVal) {
-    alert("Pilih tanggal dan waktu terlebih dahulu!");
+    alert("Pilih tanggal dan waktu!");
     return;
   }
   const isoDate = new Date(inputVal).toISOString();
@@ -144,17 +157,14 @@ async function saveFlashSaleSettings() {
 async function loadProducts() {
   const listEl = document.getElementById("productList");
   listEl.innerHTML = '<p class="text-gray-500">Memuat produk...</p>';
-
   try {
     const res = await fetch(`/api/${currentType}`);
     const products = await res.json();
-
     if (products.length === 0) {
       listEl.innerHTML =
         '<p class="text-gray-500 col-span-2">Belum ada produk.</p>';
       return;
     }
-
     listEl.innerHTML = products
       .map(
         (p) => `
@@ -184,13 +194,16 @@ async function loadProducts() {
 
 async function saveProduct(e) {
   e.preventDefault();
-
   const id = document.getElementById("productId").value;
+
+  // PERBAIKAN: Ambil nilai kategori dan ubah ke lowercase (standarisasi)
+  const categoryInput = document.getElementById("category").value.toLowerCase();
+
   const productData = {
     name: document.getElementById("name").value,
     price: parseInt(document.getElementById("price").value),
     stock: parseInt(document.getElementById("stock").value),
-    category: document.getElementById("category").value,
+    category: categoryInput, // KIRIM KATEGORI
     size: document.getElementById("size").value,
     image: document.getElementById("image").value,
     description: document.getElementById("description").value,
@@ -217,6 +230,7 @@ async function saveProduct(e) {
       alert(id ? "Produk berhasil diupdate!" : "Produk berhasil ditambahkan!");
       resetForm();
       loadProducts();
+      loadCategories(); // REFRESH LIST KATEGORI JIKA ADA BARU
     } else {
       alert("ERROR: " + (data.message || "Gagal menyimpan produk"));
     }
@@ -236,7 +250,7 @@ async function editProduct(id) {
       document.getElementById("name").value = product.name;
       document.getElementById("price").value = product.price;
       document.getElementById("stock").value = product.stock;
-      document.getElementById("category").value = product.category;
+      document.getElementById("category").value = product.category || "";
       document.getElementById("size").value = product.size || "";
       document.getElementById("image").value = product.images
         ? product.images[0]
@@ -247,7 +261,6 @@ async function editProduct(id) {
         document.getElementById("originalPrice").value = product.originalPrice;
       }
 
-      // Tampilkan preview gambar saat edit
       const previewEl = document.getElementById("imagePreview");
       const previewImg = document.getElementById("previewImg");
       if (product.images && product.images[0]) {
@@ -283,7 +296,7 @@ async function deleteProduct(id) {
 function resetForm() {
   document.getElementById("productForm").reset();
   document.getElementById("productId").value = "";
-  document.getElementById("imagePreview").classList.add("hidden"); // Sembunyikan preview saat reset
+  document.getElementById("imagePreview").classList.add("hidden");
   const titles = {
     products: "Tambah Produk Utama",
     flashsale: "Tambah Flash Sale",
@@ -296,7 +309,7 @@ function formatPrice(price) {
   return "Rp " + price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
-// ================== FITUR UPLOAD GAMBAR (DENGAN KOMPRESI) ==================
+// ================== FITUR UPLOAD GAMBAR ==================
 async function handleImageUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -316,10 +329,7 @@ async function handleImageUpload(event) {
   }
 
   try {
-    // PANGGIL FUNGSI KOMPRESI
-    // Max lebar 800px, kualitas 80% (0.8)
     const compressedBase64 = await compressImage(file, 800, 0.8);
-
     statusEl.textContent = "Mengupload...";
 
     const res = await fetch("/api/upload", {
@@ -334,7 +344,6 @@ async function handleImageUpload(event) {
       inputUrl.value = data.url;
       statusEl.textContent = "Upload berhasil!";
       statusEl.className = "text-xs text-green-500 mt-1";
-
       previewImg.src = data.url;
       previewEl.classList.remove("hidden");
     } else {
@@ -346,7 +355,6 @@ async function handleImageUpload(event) {
   }
 }
 
-// FUNGSI HELPER KOMPRESI (CANVAS)
 function compressImage(file, maxWidth, quality) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -358,18 +366,14 @@ function compressImage(file, maxWidth, quality) {
         const canvas = document.createElement("canvas");
         let width = img.width;
         let height = img.height;
-
         if (width > maxWidth) {
           height = (height * maxWidth) / width;
           width = maxWidth;
         }
-
         canvas.width = width;
         canvas.height = height;
-
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
-
         const dataUrl = canvas.toDataURL("image/jpeg", quality);
         resolve(dataUrl);
       };
