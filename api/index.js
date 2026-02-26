@@ -8,7 +8,6 @@ import fetch from "node-fetch";
 
 const app = express();
 app.use(cors());
-// PERBAIKAN ERROR 413: Tambahkan limit '50mb'
 app.use(bodyParser.json({ limit: "50mb" }));
 
 // ==================== SETUP REDIS OTOMATIS ====================
@@ -30,7 +29,6 @@ function getRedisConfig() {
 }
 
 const redis = new Redis(getRedisConfig());
-// ===============================================================
 
 // Helper: Baca Data
 const readData = async (key) => {
@@ -55,7 +53,7 @@ const writeData = async (key, data) => {
 
 // ==================== ROUTES ====================
 
-// 1. Login Admin (Logika ada di sini, tidak perlu file terpisah)
+// 1. Login Admin
 app.post("/api/login", (req, res) => {
   const { username, password } = req.body;
   if (username === "dmkstore" && password === "dmkstore") {
@@ -70,21 +68,17 @@ app.post("/api/login", (req, res) => {
 app.post("/api/upload", async (req, res) => {
   try {
     const { image } = req.body;
-
-    if (!image) {
+    if (!image)
       return res
         .status(400)
         .json({ success: false, message: "Gambar tidak ditemukan" });
-    }
 
     const apiKey = process.env.IMGBB_API_KEY;
-
-    if (!apiKey) {
+    if (!apiKey)
       return res.status(500).json({
         success: false,
         message: "Server Error: IMGBB_API_KEY belum diset.",
       });
-    }
 
     const form = new FormData();
     const base64Data = image.split(";base64,").pop();
@@ -100,17 +94,9 @@ app.post("/api/upload", async (req, res) => {
     );
 
     const result = await response.json();
-
     if (result.success) {
-      // PERBAIKAN PENTING DI SINI:
-      // Kita ambil 'image.url' (Direct Link ke file .jpg), BUKAN 'url' (Link halaman web).
-      // Direct link biasanya formatnya: https://i.ibb.co/xxxxx/namafile.jpg
-      const directUrl = result.data.image.url;
-
-      res.json({
-        success: true,
-        url: directUrl, // Kirim direct URL ke frontend
-      });
+      const directUrl = result.data.image.url; // Ambil direct URL
+      res.json({ success: true, url: directUrl });
     } else {
       throw new Error(result.error.message || "Gagal upload ke ImgBB");
     }
@@ -121,10 +107,42 @@ app.post("/api/upload", async (req, res) => {
       .json({ success: false, message: "Upload gagal: " + err.message });
   }
 });
-// ==================================================================
-// ==================================================================
 
-// 2. Get Semua Produk (Dinamis)
+// ==================== DYNAMIC CATEGORIES ====================
+const updateCategoryList = async (categoryName) => {
+  if (!categoryName) return;
+  let categories = await readData("categories");
+  if (!categories) categories = [];
+  const lowerCat = categoryName.toLowerCase();
+  if (!categories.includes(lowerCat)) {
+    categories.push(lowerCat);
+    await writeData("categories", categories);
+  }
+};
+
+app.get("/api/categories", async (req, res) => {
+  try {
+    let categories = await readData("categories");
+    if (!categories || categories.length === 0) {
+      categories = [
+        "kaos",
+        "hoodie",
+        "celana",
+        "jeans",
+        "kemeja",
+        "jaket",
+        "rok",
+        "dress",
+      ];
+      await writeData("categories", categories);
+    }
+    res.json(categories);
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Gagal ambil kategori" });
+  }
+});
+
+// 2. Get Semua Produk
 app.get("/api/:type", async (req, res) => {
   try {
     const type = req.params.type;
@@ -142,7 +160,7 @@ app.get("/api/:type", async (req, res) => {
   }
 });
 
-// 3. Tambah Produk Baru (Dinamis)
+// 3. Tambah Produk
 app.post("/api/:type", async (req, res) => {
   try {
     const type = req.params.type;
@@ -171,6 +189,9 @@ app.post("/api/:type", async (req, res) => {
 
     products.push(newProduct);
     await writeData(type, products);
+
+    if (req.body.category) await updateCategoryList(req.body.category);
+
     res.json({ success: true, product: newProduct });
   } catch (err) {
     res
@@ -179,7 +200,7 @@ app.post("/api/:type", async (req, res) => {
   }
 });
 
-// 4. Edit Produk (Dinamis)
+// 4. Edit Produk
 app.put("/api/:type/:id", async (req, res) => {
   try {
     const type = req.params.type;
@@ -204,6 +225,8 @@ app.put("/api/:type/:id", async (req, res) => {
     }
 
     await writeData(type, products);
+    if (req.body.category) await updateCategoryList(req.body.category);
+
     res.json({ success: true, product: products[index] });
   } catch (err) {
     res
@@ -212,7 +235,7 @@ app.put("/api/:type/:id", async (req, res) => {
   }
 });
 
-// 5. Hapus Produk (Dinamis)
+// 5. Hapus Produk
 app.delete("/api/:type/:id", async (req, res) => {
   try {
     const type = req.params.type;
@@ -230,27 +253,45 @@ app.delete("/api/:type/:id", async (req, res) => {
   }
 });
 
-// 6. Checkout
+// 6. Checkout (PERBAIKAN ERROR)
 app.post("/api/checkout", async (req, res) => {
   try {
     const { items } = req.body;
+
+    // Validasi Input
+    if (!items || !Array.isArray(items)) {
+      return res.status(400).json({
+        success: false,
+        message: "Data items tidak valid atau kosong.",
+      });
+    }
+
     for (const item of items) {
+      if (!item.id) continue; // Skip jika tidak ada ID
+
       const types = ["products", "flashsale", "newrelease"];
       for (const type of types) {
         let data = await readData(type);
+        if (!Array.isArray(data)) continue; // Safety check
+
         const idx = data.findIndex((p) => p.id === item.id);
         if (idx !== -1) {
-          data[idx].stock = Math.max(0, (data[idx].stock || 0) - item.quantity);
+          // Kurangi stok
+          const currentStock = data[idx].stock || 0;
+          const qty = item.quantity || 1;
+          data[idx].stock = Math.max(0, currentStock - qty);
+
           await writeData(type, data);
-          break;
+          break; // Hentikan loop type jika produk sudah ditemukan
         }
       }
     }
     res.json({ success: true, message: "Checkout sukses" });
   } catch (err) {
+    console.error("Checkout Error Detail:", err); // Log detail di server
     res
       .status(500)
-      .json({ success: false, message: "Gagal checkout: " + err.message });
+      .json({ success: false, message: "Error Server: " + err.message });
   }
 });
 
