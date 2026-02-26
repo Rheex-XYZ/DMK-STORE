@@ -1,18 +1,18 @@
 // ==================== FLASH SALE DATA ====================
 let flashSaleProducts = [];
-let FLASH_SALE_END = new Date(); // Default, akan di-update dari server
+let FLASH_SALE_END = new Date();
 let cart = [];
 
 // ==================== INITIALIZATION ====================
 document.addEventListener("DOMContentLoaded", function () {
   loadCart();
-  initApp(); // Urutan: Load Settings -> Countdown -> Products
+  initApp();
 });
 
 async function initApp() {
-  await loadFlashSaleSettings(); // 1. Load waktu dari server dulu
-  initCountdown(); // 2. Mulai countdown
-  fetchFlashSaleProducts(); // 3. Load produk
+  await loadFlashSaleSettings();
+  initCountdown();
+  fetchFlashSaleProducts();
 }
 
 // ==================== LOAD SETTINGS ====================
@@ -23,7 +23,6 @@ async function loadFlashSaleSettings() {
     if (settings.endDate) {
       FLASH_SALE_END = new Date(settings.endDate);
     } else {
-      // Jika belum ada jadwal, set ke masa lalu agar status "Sale Ended"
       FLASH_SALE_END = new Date(2020, 0, 1);
     }
   } catch (err) {
@@ -53,7 +52,6 @@ function updateCountdown() {
     return;
   }
 
-  // Tampilkan container jika sebelumnya tersembunyi
   if (countdownContainer) countdownContainer.style.display = "inline-block";
 
   const days = Math.floor(distance / (1000 * 60 * 60 * 24));
@@ -95,6 +93,7 @@ function saveCart() {
   updateCartUI();
 }
 
+// ========== PERBAIKAN UTAMA ADA DI SINI ==========
 function addToCart(productId) {
   const product = flashSaleProducts.find((p) => p.id === productId);
   if (!product || product.stock <= 0) return;
@@ -106,8 +105,8 @@ function addToCart(productId) {
   cart.push({
     id: product.id,
     name: product.name,
-    price: product.salePrice,
-    image: product.images[0],
+    price: product.price, // UBAH: Pakai 'price' (bukan salePrice) karena itu nama field di DB
+    image: product.images ? product.images[0] : "", // UBAH: Safety check
     isFlashSale: true,
   });
   saveCart();
@@ -119,6 +118,7 @@ function removeFromCart(productId) {
   saveCart();
   renderCartItems();
 }
+
 function updateCartUI() {
   const badge = document.getElementById("cartBadge");
   const count = document.getElementById("cartCount");
@@ -141,6 +141,7 @@ function updateCartUI() {
   }
   renderCartItems();
 }
+
 function renderCartItems() {
   const container = document.getElementById("cartItems");
   const emptyEl = document.getElementById("cartEmpty");
@@ -163,6 +164,7 @@ function renderCartItems() {
     container.appendChild(itemEl);
   });
 }
+
 function toggleCart() {
   const cartSection = document.getElementById("cartSection");
   const cartOverlay = document.getElementById("cartOverlay");
@@ -192,6 +194,7 @@ function openCheckoutModal() {
   overlay.classList.add("active");
   document.body.style.overflow = "hidden";
 }
+
 function closeCheckoutModal() {
   const modal = document.getElementById("checkoutModal");
   const overlay = document.getElementById("checkoutModalOverlay");
@@ -199,6 +202,7 @@ function closeCheckoutModal() {
   overlay.classList.remove("active");
   document.body.style.overflow = "";
 }
+
 function confirmCheckout() {
   const selectedPayment = document.querySelector(
     'input[name="paymentMethod"]:checked',
@@ -240,6 +244,7 @@ function confirmCheckout() {
   saveCart();
   toggleCart();
 }
+
 function checkoutAll() {
   if (cart.length === 0) {
     showToast("Keranjang masih kosong");
@@ -257,8 +262,8 @@ function buyNow(productId) {
     cart.push({
       id: product.id,
       name: product.name,
-      price: product.salePrice,
-      image: product.images[0],
+      price: product.price, // UBAH: Pakai 'price'
+      image: product.images ? product.images[0] : "",
     });
     saveCart();
   }
@@ -297,25 +302,28 @@ function renderFlashSaleProducts() {
   if (!grid) return;
 
   if (flashSaleProducts.length === 0) {
-    grid.style.display = "none";
+    grid.innerHTML =
+      "<p class='text-gray-500 col-span-2 text-center'>Belum ada produk Flash Sale.</p>";
     return;
   }
+
   grid.innerHTML = "";
-  flashSaleProducts.forEach((product, index) => {
+  flashSaleProducts.forEach((product) => {
     const card = document.createElement("div");
     card.className = "flash-card";
     const isOutOfStock = product.stock <= 0;
-    // Hitung ulang diskon jika perlu, atau pakai dari DB
     const discount = product.discount || 0;
-    const stockPercentage = product.totalStock
-      ? (product.stock / product.totalStock) * 100
-      : 50;
+    // Safety check gambar
+    const imgSrc =
+      product.images && product.images[0]
+        ? product.images[0]
+        : "https://via.placeholder.com/400?text=No+Image";
 
     card.innerHTML = `
       <div class="flash-image-container">
         <span class="flash-tag">Flash Sale</span>
         <span class="discount-badge">-${discount}%</span>
-        <img src="${product.images[0]}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/400x400/1a1a1a/ef4444?text=SALE'">
+        <img src="${imgSrc}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/400x400/1a1a1a/ef4444?text=Error'">
       </div>
       <div class="flash-card-info">
         <h3 class="flash-card-name">${product.name}</h3>
@@ -325,7 +333,7 @@ function renderFlashSaleProducts() {
           <span class="flash-price-sale">${formatPrice(product.price)}</span>
         </div>
         <p class="flash-stock ${isOutOfStock ? "out-of-stock" : "available"}">${isOutOfStock ? "Stok Habis!" : `Tersisa ${product.stock}`}</p>
-        <div class="stock-progress"><div class="stock-progress-bar" style="width: ${stockPercentage}%"></div></div>
+        <div class="stock-progress"><div class="stock-progress-bar" style="width: ${product.stock > 0 ? (product.stock / (product.totalStock || product.stock)) * 100 : 0}%"></div></div>
         <div class="flash-card-actions">
           <button class="flash-btn-cart" onclick="addToCart(${product.id})" ${isOutOfStock ? "disabled" : ""}>Keranjang</button>
           <button class="flash-btn-buy" onclick="buyNow(${product.id})" ${isOutOfStock ? "disabled" : ""}>Beli</button>
@@ -338,8 +346,11 @@ function renderFlashSaleProducts() {
 
 // ==================== UTILITY ====================
 function formatPrice(price) {
+  // Pastikan price adalah angka, jika undefined/NaN kembalikan 0
+  if (!price || isNaN(price)) return "Rp 0";
   return "Rp " + price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
+
 function showToast(message) {
   const toast = document.getElementById("toast");
   const toastMessage = document.getElementById("toastMessage");
