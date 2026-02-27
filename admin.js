@@ -185,17 +185,14 @@ async function loadProducts() {
   }
 }
 
-// ================== FUNGSI BARU: OTOMATISASI KATEGORI ==================
+// ================== FUNGSI OTOMATISASI KATEGORI ==================
 async function populateCategoryOptions(currentProducts) {
   const datalist = document.getElementById("categoryList");
   if (!datalist) return;
 
   try {
-    // Ambil semua produk dari semua tipe untuk mendapatkan daftar kategori lengkap
     const types = ["products", "flashsale", "newrelease"];
     let allProducts = [];
-
-    // Fetch semua tipe
     const promises = types.map((type) =>
       fetch(`/api/${type}`).then((r) => r.json()),
     );
@@ -204,12 +201,10 @@ async function populateCategoryOptions(currentProducts) {
       if (Array.isArray(data)) allProducts = [...allProducts, ...data];
     });
 
-    // Ekstrak kategori unik
     const categories = [
       ...new Set(allProducts.map((p) => p.category).filter((c) => c)),
     ];
 
-    // Isi datalist
     datalist.innerHTML = categories
       .map((cat) => `<option value="${cat}">`)
       .join("");
@@ -218,25 +213,37 @@ async function populateCategoryOptions(currentProducts) {
   }
 }
 
+// ================== SAVE PRODUCT (MULTI IMAGE) ==================
 async function saveProduct(e) {
   e.preventDefault();
 
   const id = document.getElementById("productId").value;
   const categoryInput = document.getElementById("category").value;
 
-  // Cek jika kategori kosong
   if (!categoryInput) {
-    alert("Kategori tidak boleh kosong!");
-    return;
+    return alert("Kategori tidak boleh kosong!");
   }
+
+  // Kumpulkan gambar
+  const img1 = document.getElementById("image1").value;
+  const img2 = document.getElementById("image2").value;
+  const img3 = document.getElementById("image3").value;
+
+  if (!img1) {
+    return alert("Foto utama (Foto 1) wajib diisi!");
+  }
+
+  let images = [img1];
+  if (img2) images.push(img2);
+  if (img3) images.push(img3);
 
   const productData = {
     name: document.getElementById("name").value,
     price: parseInt(document.getElementById("price").value),
     stock: parseInt(document.getElementById("stock").value),
-    category: categoryInput, // Ambil nilai dari input teks
+    category: categoryInput,
     size: document.getElementById("size").value,
-    image: document.getElementById("image").value,
+    images: images, // Kirim array
     description: document.getElementById("description").value,
   };
 
@@ -260,7 +267,7 @@ async function saveProduct(e) {
     if (data.success) {
       alert(id ? "Produk berhasil diupdate!" : "Produk berhasil ditambahkan!");
       resetForm();
-      loadProducts(); // Load ulang untuk update opsi kategori juga
+      loadProducts();
     } else {
       alert("ERROR: " + (data.message || "Gagal menyimpan produk"));
     }
@@ -269,6 +276,7 @@ async function saveProduct(e) {
   }
 }
 
+// ================== EDIT PRODUCT (MULTI IMAGE) ==================
 async function editProduct(id) {
   try {
     const res = await fetch(`/api/${currentType}`);
@@ -280,24 +288,38 @@ async function editProduct(id) {
       document.getElementById("name").value = product.name;
       document.getElementById("price").value = product.price;
       document.getElementById("stock").value = product.stock;
-      document.getElementById("category").value = product.category; // Isi input kategori
+      document.getElementById("category").value = product.category;
       document.getElementById("size").value = product.size || "";
-      document.getElementById("image").value = product.images
-        ? product.images[0]
-        : "";
       document.getElementById("description").value = product.description || "";
+
+      // Isi input gambar
+      const imgs = product.images || [];
+      document.getElementById("image1").value = imgs[0] || "";
+      document.getElementById("image2").value = imgs[1] || "";
+      document.getElementById("image3").value = imgs[2] || "";
+
+      // Update preview
+      const prev1 = document.getElementById("preview1");
+      const prev2 = document.getElementById("preview2");
+      const prev3 = document.getElementById("preview3");
+
+      if (imgs[0]) {
+        prev1.src = imgs[0];
+        prev1.classList.remove("hidden");
+      } else prev1.classList.add("hidden");
+
+      if (imgs[1]) {
+        prev2.src = imgs[1];
+        prev2.classList.remove("hidden");
+      } else prev2.classList.add("hidden");
+
+      if (imgs[2]) {
+        prev3.src = imgs[2];
+        prev3.classList.remove("hidden");
+      } else prev3.classList.add("hidden");
 
       if (currentType === "flashsale" && product.originalPrice) {
         document.getElementById("originalPrice").value = product.originalPrice;
-      }
-
-      const previewEl = document.getElementById("imagePreview");
-      const previewImg = document.getElementById("previewImg");
-      if (product.images && product.images[0]) {
-        previewImg.src = product.images[0];
-        previewEl.classList.remove("hidden");
-      } else {
-        previewEl.classList.add("hidden");
       }
 
       document.getElementById("formTitle").textContent =
@@ -326,7 +348,11 @@ async function deleteProduct(id) {
 function resetForm() {
   document.getElementById("productForm").reset();
   document.getElementById("productId").value = "";
-  document.getElementById("imagePreview").classList.add("hidden");
+  // Sembunyikan preview
+  document.getElementById("preview1").classList.add("hidden");
+  document.getElementById("preview2").classList.add("hidden");
+  document.getElementById("preview3").classList.add("hidden");
+
   const titles = {
     products: "Tambah Produk Utama",
     flashsale: "Tambah Flash Sale",
@@ -339,15 +365,14 @@ function formatPrice(price) {
   return "Rp " + price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
-// ================== FITUR UPLOAD GAMBAR ==================
-async function handleImageUpload(event) {
+// ================== FITUR UPLOAD GAMBAR (MULTI INPUT) ==================
+async function handleImageUpload(event, inputId, previewId) {
   const file = event.target.files[0];
   if (!file) return;
 
   const statusEl = document.getElementById("uploadStatus");
-  const previewEl = document.getElementById("imagePreview");
-  const previewImg = document.getElementById("previewImg");
-  const inputUrl = document.getElementById("image");
+  const previewEl = document.getElementById(previewId);
+  const inputUrl = document.getElementById(inputId);
 
   statusEl.textContent = "Memproses gambar...";
   statusEl.className = "text-xs text-yellow-500 mt-1";
@@ -360,7 +385,6 @@ async function handleImageUpload(event) {
 
   try {
     const compressedBase64 = await compressImage(file, 800, 0.8);
-
     statusEl.textContent = "Mengupload...";
 
     const res = await fetch("/api/upload", {
@@ -376,7 +400,7 @@ async function handleImageUpload(event) {
       statusEl.textContent = "Upload berhasil!";
       statusEl.className = "text-xs text-green-500 mt-1";
 
-      previewImg.src = data.url;
+      previewEl.src = data.url;
       previewEl.classList.remove("hidden");
     } else {
       throw new Error(data.message || "Gagal upload ke server");

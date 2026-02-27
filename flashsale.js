@@ -235,7 +235,6 @@ async function confirmCheckout() {
       atasNama: "Sri Nofrianti",
     };
 
-  // Kirim ke server untuk update stok
   try {
     const checkoutData = {
       items: currentCheckoutItems.map((item) => ({
@@ -300,7 +299,6 @@ function buyNow(productId) {
   const product = flashSaleProducts.find((p) => p.id === productId);
   if (!product || product.stock <= 0) return;
 
-  // Buat item sementara TANPA menambah ke cart
   const itemToBuy = {
     id: product.id,
     name: product.name,
@@ -324,7 +322,7 @@ function toggleMenu() {
     : "";
 }
 
-// ==================== RENDER PRODUK ====================
+// ==================== RENDER PRODUK DENGAN SLIDER ====================
 async function fetchFlashSaleProducts() {
   const grid = document.getElementById("flashSaleGrid");
   try {
@@ -354,16 +352,46 @@ function renderFlashSaleProducts() {
     card.className = "flash-card";
     const isOutOfStock = product.stock <= 0;
     const discount = product.discount || 0;
-    const imgSrc =
-      product.images && product.images[0]
-        ? product.images[0]
-        : "https://via.placeholder.com/400?text=No+Image";
+
+    // Ambil gambar
+    const productImages =
+      product.images && product.images.length > 0
+        ? product.images
+        : ["https://via.placeholder.com/400?text=No+Image"];
 
     card.innerHTML = `
       <div class="flash-image-container">
         <span class="flash-tag">Flash Sale</span>
         <span class="discount-badge">-${discount}%</span>
-        <img src="${imgSrc}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/400x400/1a1a1a/ef4444?text=Error'">
+        
+        <!-- SLIDER HTML -->
+        <div class="product-slider" id="slider-flash-${product.id}">
+            ${productImages
+              .map(
+                (img, i) => `
+                <div class="product-slide">
+                    <img src="${img}" alt="${product.name} - ${i + 1}" onerror="this.src='https://via.placeholder.com/400x400/1a1a1a/ef4444?text=Error'">
+                </div>
+            `,
+              )
+              .join("")}
+        </div>
+
+        ${
+          productImages.length > 1
+            ? `
+            <button class="slider-nav slider-prev" onclick="slideFlashImage(${product.id}, -1); event.stopPropagation();">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <button class="slider-nav slider-next" onclick="slideFlashImage(${product.id}, 1); event.stopPropagation();">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+            <div class="slider-dots">
+                ${productImages.map((_, i) => `<span class="slider-dot ${i === 0 ? "active" : ""}" onclick="goToFlashSlide(${product.id}, ${i})"></span>`).join("")}
+            </div>
+        `
+            : ""
+        }
       </div>
       <div class="flash-card-info">
         <h3 class="flash-card-name">${product.name}</h3>
@@ -381,6 +409,42 @@ function renderFlashSaleProducts() {
       </div>
     `;
     grid.appendChild(card);
+  });
+}
+
+// ==================== LOGIKA SLIDER FLASH SALE ====================
+const flashSliderStates = {};
+
+function slideFlashImage(productId, direction) {
+  const product = flashSaleProducts.find((p) => p.id === productId);
+  if (!product || !product.images) return;
+
+  const totalImages = product.images.length;
+  if (!flashSliderStates[productId]) flashSliderStates[productId] = 0;
+
+  flashSliderStates[productId] += direction;
+  if (flashSliderStates[productId] < 0)
+    flashSliderStates[productId] = totalImages - 1;
+  if (flashSliderStates[productId] >= totalImages)
+    flashSliderStates[productId] = 0;
+
+  updateFlashSlider(productId);
+}
+
+function goToFlashSlide(productId, index) {
+  flashSliderStates[productId] = index;
+  updateFlashSlider(productId);
+}
+
+function updateFlashSlider(productId) {
+  const slider = document.getElementById(`slider-flash-${productId}`);
+  if (!slider) return;
+
+  const dots = slider.parentElement.querySelectorAll(".slider-dot");
+  slider.style.transform = `translateX(-${flashSliderStates[productId] * 100}%)`;
+
+  dots.forEach((dot, i) => {
+    dot.classList.toggle("active", i === flashSliderStates[productId]);
   });
 }
 

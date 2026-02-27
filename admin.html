@@ -230,55 +230,102 @@
             </div>
             <!-- ... kode setelahnya ... -->
 
-            <!-- BAGIAN GAMBAR DENGAN FITUR UPLOAD -->
+            <!-- BAGIAN GAMBAR DENGAN FITUR UPLOAD (3 KOLOM) -->
             <div>
-              <label class="text-sm text-gray-400">Gambar Produk</label>
-              <div class="flex gap-2 items-center mt-1">
-                <!-- Input URL (Akan terisi otomatis saat upload berhasil) -->
-                <input
-                  type="url"
-                  id="image"
-                  placeholder="Link gambar otomatis muncul di sini"
-                  class="flex-1 bg-gray-800 p-2 rounded border border-gray-700 outline-none text-sm"
-                />
+              <label class="text-sm text-gray-400">Foto Produk (Maks 3)</label>
 
-                <!-- Tombol Upload -->
-                <label
-                  class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded cursor-pointer text-sm font-semibold flex items-center gap-2 transition whitespace-nowrap"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="17 8 12 3 7 8"></polyline>
-                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                  </svg>
-                  Upload
+              <!-- Foto 1 (Utama) -->
+              <div class="mb-2">
+                <label class="text-xs text-gray-500">Foto 1 (Utama)</label>
+                <div class="flex gap-2 items-center mt-1">
                   <input
-                    type="file"
-                    id="imageFile"
-                    accept="image/*"
-                    class="hidden"
-                    onchange="handleImageUpload(event)"
+                    type="text"
+                    id="image1"
+                    placeholder="Link gambar utama"
+                    class="flex-1 bg-gray-800 p-2 rounded border border-gray-700 outline-none text-sm"
+                    required
                   />
-                </label>
-              </div>
-              <!-- Status Upload -->
-              <p id="uploadStatus" class="text-xs text-gray-500 mt-1 h-4"></p>
-              <!-- Preview Gambar -->
-              <div id="imagePreview" class="mt-2 hidden">
+                  <label
+                    class="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded cursor-pointer text-xs font-semibold whitespace-nowrap"
+                  >
+                    Upload
+                    <input
+                      type="file"
+                      id="imageFile1"
+                      accept="image/*"
+                      class="hidden"
+                      onchange="handleImageUpload(event, 'image1', 'preview1')"
+                    />
+                  </label>
+                </div>
                 <img
-                  src=""
-                  id="previewImg"
-                  class="w-24 h-24 object-cover rounded border border-gray-700"
-                  alt="Preview"
+                  id="preview1"
+                  class="mt-2 w-20 h-20 object-cover rounded border border-gray-700 hidden"
+                  alt="Preview 1"
                 />
               </div>
+
+              <!-- Foto 2 -->
+              <div class="mb-2">
+                <label class="text-xs text-gray-500">Foto 2 (Opsional)</label>
+                <div class="flex gap-2 items-center mt-1">
+                  <input
+                    type="text"
+                    id="image2"
+                    placeholder="Link gambar ke-2"
+                    class="flex-1 bg-gray-800 p-2 rounded border border-gray-700 outline-none text-sm"
+                  />
+                  <label
+                    class="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded cursor-pointer text-xs font-semibold whitespace-nowrap"
+                  >
+                    Upload
+                    <input
+                      type="file"
+                      id="imageFile2"
+                      accept="image/*"
+                      class="hidden"
+                      onchange="handleImageUpload(event, 'image2', 'preview2')"
+                    />
+                  </label>
+                </div>
+                <img
+                  id="preview2"
+                  class="mt-2 w-20 h-20 object-cover rounded border border-gray-700 hidden"
+                  alt="Preview 2"
+                />
+              </div>
+
+              <!-- Foto 3 -->
+              <div class="mb-2">
+                <label class="text-xs text-gray-500">Foto 3 (Opsional)</label>
+                <div class="flex gap-2 items-center mt-1">
+                  <input
+                    type="text"
+                    id="image3"
+                    placeholder="Link gambar ke-3"
+                    class="flex-1 bg-gray-800 p-2 rounded border border-gray-700 outline-none text-sm"
+                  />
+                  <label
+                    class="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded cursor-pointer text-xs font-semibold whitespace-nowrap"
+                  >
+                    Upload
+                    <input
+                      type="file"
+                      id="imageFile3"
+                      accept="image/*"
+                      class="hidden"
+                      onchange="handleImageUpload(event, 'image3', 'preview3')"
+                    />
+                  </label>
+                </div>
+                <img
+                  id="preview3"
+                  class="mt-2 w-20 h-20 object-cover rounded border border-gray-700 hidden"
+                  alt="Preview 3"
+                />
+              </div>
+
+              <p id="uploadStatus" class="text-xs text-gray-500 mt-1 h-4"></p>
             </div>
             <!-- AKHIR BAGIAN GAMBAR -->
 
