@@ -203,16 +203,25 @@ function toggleMenu() {
     : "";
 }
 
+// ... (kode awal tetap sama)
+
 // ==================== LOGIC VIEW & RENDER ====================
 
 async function fetchFlashSaleProducts() {
   const grid = document.getElementById("fsCategoryGrid");
   try {
+    // Ambil data produk
     const res = await fetch("/api/flashsale");
-    if (res.ok) {
-      flashSaleProducts = await res.json();
-      renderCategoryView();
-    }
+    if (res.ok) flashSaleProducts = await res.json();
+
+    // Ambil data settings (untuk cover kategori)
+    const setRes = await fetch("/api/flashsale/settings");
+    const settings = await setRes.json();
+
+    // Simpan ke global untuk digunakan render
+    window.fsSettings = settings || {};
+
+    renderCategoryView();
   } catch (err) {
     console.error(err);
   }
@@ -226,7 +235,6 @@ function renderCategoryView() {
   const titleEl = document.getElementById("fsPageTitle");
   const subtitleEl = document.getElementById("fsPageSubtitle");
 
-  // Tampilkan Grid Kategori, Sembunyikan Detail
   grid.classList.remove("hidden");
   detailGrid.classList.add("hidden");
   backBtn.classList.add("hidden");
@@ -236,22 +244,15 @@ function renderCategoryView() {
   // Grouping by Category
   const categories = {};
   flashSaleProducts.forEach((p) => {
-    if (!categories[p.category]) {
-      categories[p.category] = [];
-    }
+    if (!categories[p.category]) categories[p.category] = [];
     categories[p.category].push(p);
   });
 
   grid.innerHTML = "";
 
-  // Render Card per Kategori
   Object.keys(categories).forEach((cat) => {
     const items = categories[cat];
-
-    // Hitung Total Stok
     const totalStock = items.reduce((sum, item) => sum + (item.stock || 0), 0);
-
-    // Hitung Range Harga
     const salePrices = items.map((i) => i.price).filter((p) => p > 0);
     const originalPrices = items
       .map((i) => i.originalPrice)
@@ -262,11 +263,20 @@ function renderCategoryView() {
     const minOrig = originalPrices.length ? Math.min(...originalPrices) : 0;
     const maxOrig = originalPrices.length ? Math.max(...originalPrices) : 0;
 
-    // Ambil Gambar Pertama sebagai Cover
-    const coverImage =
-      items[0].images && items[0].images[0]
-        ? items[0].images[0]
-        : "https://via.placeholder.com/400?text=No+Image";
+    // CEK COVER KHUSUS DARI SETTINGS, JIKA TIDAK ADA AMBIL DARI PRODUK PERTAMA
+    let coverImage = "";
+    if (
+      window.fsSettings &&
+      window.fsSettings.categoryImages &&
+      window.fsSettings.categoryImages[cat]
+    ) {
+      coverImage = window.fsSettings.categoryImages[cat];
+    } else {
+      coverImage =
+        items[0].images && items[0].images[0]
+          ? items[0].images[0]
+          : "https://via.placeholder.com/400?text=No+Image";
+    }
 
     const card = document.createElement("div");
     card.className = "fs-category-card";
@@ -291,6 +301,8 @@ function renderCategoryView() {
     grid.appendChild(card);
   });
 }
+
+// ... (kode selanjutnya tetap sama)
 
 // 2. TAMPILAN DETAIL VARIAN
 function showDetailCategory(category) {

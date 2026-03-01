@@ -1,5 +1,6 @@
 // ================== ADMIN LOGIC ==================
 let currentType = "products";
+let imageCounter = 0; // Counter untuk ID unik input gambar
 
 document.addEventListener("DOMContentLoaded", () => {
   const isLoggedIn = localStorage.getItem("dmk_admin_logged_in");
@@ -18,16 +19,16 @@ function showLogin() {
 function showDashboard() {
   document.getElementById("loginModal").classList.add("hidden");
   document.getElementById("dashboard").classList.remove("hidden");
+  // Inisialisasi 1 input gambar saat load
+  resetForm();
   loadProducts();
 }
 
-// Handle Login
 async function handleLogin(e) {
   e.preventDefault();
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
   const errorEl = document.getElementById("loginError");
-
   try {
     const res = await fetch("/api/login", {
       method: "POST",
@@ -35,7 +36,6 @@ async function handleLogin(e) {
       body: JSON.stringify({ username, password }),
     });
     const data = await res.json();
-
     if (data.success) {
       localStorage.setItem("dmk_admin_logged_in", "true");
       showDashboard();
@@ -56,7 +56,6 @@ function logout() {
 // ================== SWITCH TAB ==================
 function switchTab(type) {
   currentType = type;
-
   document
     .querySelectorAll(".tab-btn")
     .forEach((btn) => btn.classList.remove("active"));
@@ -69,7 +68,7 @@ function switchTab(type) {
     timerSettings.classList.remove("hidden");
     originalPriceField.classList.remove("hidden");
     document.getElementById("originalPrice").required = true;
-    loadFlashSaleSettings();
+    loadFlashSaleSettings(); // Load waktu & cover kategori
   } else {
     timerSettings.classList.add("hidden");
     originalPriceField.classList.add("hidden");
@@ -88,15 +87,15 @@ function switchTab(type) {
   loadProducts();
 }
 
-// ================== FLASH SALE SETTINGS ==================
+// ================== FLASH SALE SETTINGS (WITH CATEGORY IMAGES) ==================
 async function loadFlashSaleSettings() {
   try {
     const res = await fetch("/api/flashsale/settings");
     const settings = await res.json();
 
+    // Load Waktu
     const inputEl = document.getElementById("flashSaleEndTime");
     const infoEl = document.getElementById("currentEndTime");
-
     if (settings.endDate) {
       const dateObj = new Date(settings.endDate);
       const localDate = new Date(
@@ -108,47 +107,130 @@ async function loadFlashSaleSettings() {
       infoEl.textContent = `Jadwal saat ini: ${dateObj.toLocaleString("id-ID")}`;
     } else {
       inputEl.value = "";
-      infoEl.textContent = "Belum ada jadwal ditetapkan.";
+      infoEl.textContent = "Belum ada jadwal.";
     }
+
+    // Load Category Images
+    const categoryImages = settings.categoryImages || {};
+    const categories = await getExistingCategories(); // Ambil daftar kategori
+    const container = document.getElementById("categoryCoverInputs");
+    container.innerHTML = "";
+
+    categories.forEach((cat) => {
+      const currentImg = categoryImages[cat] || "";
+      container.innerHTML += `
+            <div class="flex gap-2 items-center">
+                <span class="w-20 text-xs truncate" title="${cat}">${cat}</span>
+                <input type="text" id="cover-${cat.replace(/\s/g, "_")}" value="${currentImg}" placeholder="Link gambar cover" class="flex-1 bg-gray-700 p-1 rounded text-xs border border-gray-600"/>
+                <label class="bg-blue-600 px-2 py-1 rounded cursor-pointer text-xs">Upload<input type="file" accept="image/*" class="hidden" onchange="handleCategoryCoverUpload(event, '${cat}')"/></label>
+            </div>
+        `;
+    });
   } catch (err) {
     console.error("Gagal load settings", err);
   }
 }
 
+async function getExistingCategories() {
+  // Helper untuk ambil list kategori unik dari semua produk flash sale
+  try {
+    const res = await fetch("/api/flashsale");
+    const products = await res.json();
+    return [...new Set(products.map((p) => p.category).filter((c) => c))];
+  } catch (e) {
+    return [];
+  }
+}
+
+async function handleCategoryCoverUpload(event, category) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const statusEl = document.getElementById("currentEndTime");
+  statusEl.textContent = "Mengupload cover...";
+
+  const compressed = await compressImage(file, 800, 0.8);
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ image: compressed }),
+  });
+  const data = await res.json();
+  if (data.success) {
+    document.getElementById(`cover-${category.replace(/\s/g, "_")}`).value =
+      data.url;
+    statusEl.textContent = "Cover siap disimpan.";
+  } else {
+    statusEl.textContent = "Gagal upload cover.";
+  }
+}
+
 async function saveFlashSaleSettings() {
   const inputVal = document.getElementById("flashSaleEndTime").value;
-  if (!inputVal) {
-    alert("Pilih tanggal dan waktu terlebih dahulu!");
-    return;
-  }
-  const isoDate = new Date(inputVal).toISOString();
+
+  // Kumpulkan semua input cover
+  const categoryImages = {};
+  const inputs = document.querySelectorAll(
+    '#categoryCoverInputs input[type="text"]',
+  );
+  inputs.forEach((input) => {
+    const cat = input.id.replace("cover-", "").replace(/_/g, " ");
+    if (input.value) categoryImages[cat] = input.value;
+  });
+
   try {
     const res = await fetch("/api/flashsale/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ endDate: isoDate }),
+      body: JSON.stringify({
+        endDate: inputVal ? new Date(inputVal).toISOString() : null,
+        categoryImages: categoryImages,
+      }),
     });
     const data = await res.json();
     if (data.success) {
-      alert("Jadwal flash sale berhasil disimpan!");
+      alert("Pengaturan Flash Sale disimpan!");
       loadFlashSaleSettings();
     } else {
-      alert("Gagal menyimpan jadwal.");
+      alert("Gagal menyimpan.");
     }
   } catch (err) {
-    alert("Error koneksi: " + err.message);
+    alert("Error: " + err.message);
   }
+}
+
+// ================== DYNAMIC IMAGE INPUT ==================
+function addImageInput(value = "") {
+  const container = document.getElementById("imageInputsContainer");
+  const div = document.createElement("div");
+  div.className = "image-input-row";
+  div.id = `img-row-${imageCounter}`;
+
+  div.innerHTML = `
+    <input type="text" placeholder="Link gambar" value="${value}" class="img-input flex-1 bg-gray-800 p-2 rounded border border-gray-700 outline-none text-sm" />
+    <label class="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded cursor-pointer text-xs font-semibold whitespace-nowrap">
+        Upload
+        <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(event, this)"/>
+    </label>
+    <button type="button" onclick="removeImageInput('img-row-${imageCounter}')" class="text-red-500 hover:text-red-400 text-xs">Hapus</button>
+  `;
+  container.appendChild(div);
+  imageCounter++;
+}
+
+function removeImageInput(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
 }
 
 // ================== PRODUCT CRUD ==================
 async function loadProducts() {
   const listEl = document.getElementById("productList");
-  listEl.innerHTML = '<p class="text-gray-500">Memuat produk...</p>';
+  listEl.innerHTML = '<p class="text-gray-500">Memuat...</p>';
 
   try {
     const res = await fetch(`/api/${currentType}`);
     const products = await res.json();
-
     populateCategoryOptions(products);
 
     if (products.length === 0) {
@@ -159,15 +241,17 @@ async function loadProducts() {
 
     listEl.innerHTML = products
       .map((p) => {
-        // Khusus Flash Sale tampilkan harga coret
         const priceDisplay =
           currentType === "flashsale"
             ? `<p class="font-bold text-white">${formatPrice(p.price)} <span class="text-xs text-gray-500 line-through ml-1">${formatPrice(p.originalPrice)}</span></p>`
             : `<p class="font-bold text-white">${formatPrice(p.price)}</p>`;
 
+        // Ambil gambar utama
+        const mainImg = p.images && p.images[0] ? p.images[0] : "";
+
         return `
         <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 flex gap-4">
-          <img src="${getProxyUrl(p.images && p.images[0] ? p.images[0] : "")}" alt="${p.name}" class="w-24 h-24 object-cover rounded" onerror="this.src='https://via.placeholder.com/100'">
+          <img src="${getProxyUrl(mainImg)}" alt="${p.name}" class="w-24 h-24 object-cover rounded" onerror="this.src='https://via.placeholder.com/100'">
           <div class="flex-1">
             <h3 class="font-bold text-yellow-500">${p.name}</h3>
             <p class="text-sm text-gray-400">Kategori: ${p.category || "-"} | Ukuran: ${p.size || "-"}</p>
@@ -189,11 +273,9 @@ async function loadProducts() {
   }
 }
 
-// ================== FUNGSI OTOMATISASI KATEGORI ==================
 async function populateCategoryOptions(currentProducts) {
   const datalist = document.getElementById("categoryList");
   if (!datalist) return;
-
   try {
     const types = ["products", "flashsale", "newrelease"];
     let allProducts = [];
@@ -204,42 +286,35 @@ async function populateCategoryOptions(currentProducts) {
     results.forEach((data) => {
       if (Array.isArray(data)) allProducts = [...allProducts, ...data];
     });
-
     const categories = [
       ...new Set(allProducts.map((p) => p.category).filter((c) => c)),
     ];
-
     datalist.innerHTML = categories
       .map((cat) => `<option value="${cat}">`)
       .join("");
+
+    // Refresh settings jika di tab flashsale
+    if (currentType === "flashsale") loadFlashSaleSettings();
   } catch (err) {
     console.error("Gagal memuat opsi kategori", err);
   }
 }
 
-// ================== SAVE PRODUCT ==================
+// ================== SAVE & EDIT (MODIFIED FOR DYNAMIC IMAGES) ==================
 async function saveProduct(e) {
   e.preventDefault();
-
   const id = document.getElementById("productId").value;
   const categoryInput = document.getElementById("category").value;
+  if (!categoryInput) return alert("Kategori wajib!");
 
-  if (!categoryInput) {
-    return alert("Kategori tidak boleh kosong!");
-  }
+  // Kumpulkan gambar dari dynamic inputs
+  const imgInputs = document.querySelectorAll(".img-input");
+  let images = [];
+  imgInputs.forEach((input) => {
+    if (input.value.trim()) images.push(input.value.trim());
+  });
 
-  // Kumpulkan gambar
-  const img1 = document.getElementById("image1").value;
-  const img2 = document.getElementById("image2").value;
-  const img3 = document.getElementById("image3").value;
-
-  if (!img1) {
-    return alert("Foto utama (Foto 1) wajib diisi!");
-  }
-
-  let images = [img1];
-  if (img2) images.push(img2);
-  if (img3) images.push(img3);
+  if (images.length === 0) return alert("Minimal 1 gambar wajib!");
 
   const productData = {
     name: document.getElementById("name").value,
@@ -251,7 +326,6 @@ async function saveProduct(e) {
     description: document.getElementById("description").value,
   };
 
-  // Khusus Flash Sale, tambahkan harga awal
   if (currentType === "flashsale") {
     productData.originalPrice =
       parseInt(document.getElementById("originalPrice").value) || 0;
@@ -267,20 +341,18 @@ async function saveProduct(e) {
       body: JSON.stringify(productData),
     });
     const data = await res.json();
-
     if (data.success) {
-      alert(id ? "Produk berhasil diupdate!" : "Produk berhasil ditambahkan!");
+      alert("Berhasil!");
       resetForm();
       loadProducts();
     } else {
-      alert("ERROR: " + (data.message || "Gagal menyimpan produk"));
+      alert("ERROR: " + (data.message || "Gagal"));
     }
   } catch (err) {
-    alert("Terjadi kesalahan koneksi: " + err.message);
+    alert("Error: " + err.message);
   }
 }
 
-// ================== EDIT PRODUCT ==================
 async function editProduct(id) {
   try {
     const res = await fetch(`/api/${currentType}`);
@@ -295,38 +367,24 @@ async function editProduct(id) {
       document.getElementById("category").value = product.category;
       document.getElementById("size").value = product.size || "";
       document.getElementById("description").value = product.description || "";
-
-      // Isi input gambar
-      const imgs = product.images || [];
-      document.getElementById("image1").value = imgs[0] || "";
-      document.getElementById("image2").value = imgs[1] || "";
-      document.getElementById("image3").value = imgs[2] || "";
-
-      // Update preview
-      const prev1 = document.getElementById("preview1");
-      const prev2 = document.getElementById("preview2");
-      const prev3 = document.getElementById("preview3");
-
-      if (imgs[0]) {
-        prev1.src = getProxyUrl(imgs[0]);
-        prev1.classList.remove("hidden");
-      } else prev1.classList.add("hidden");
-      if (imgs[1]) {
-        prev2.src = getProxyUrl(imgs[1]);
-        prev2.classList.remove("hidden");
-      } else prev2.classList.add("hidden");
-      if (imgs[2]) {
-        prev3.src = getProxyUrl(imgs[2]);
-        prev3.classList.remove("hidden");
-      } else prev3.classList.add("hidden");
-
-      // Khusus Flash Sale
       if (currentType === "flashsale" && product.originalPrice) {
         document.getElementById("originalPrice").value = product.originalPrice;
       }
 
+      // Populate Dynamic Images
+      const container = document.getElementById("imageInputsContainer");
+      container.innerHTML = ""; // Kosongkan dulu
+      imageCounter = 0;
+
+      const imgs = product.images || [];
+      if (imgs.length > 0) {
+        imgs.forEach((img) => addImageInput(img));
+      } else {
+        addImageInput(); // Tambah 1 kosong jika tidak ada
+      }
+
       document.getElementById("formTitle").textContent =
-        "Edit Produk: " + product.name;
+        "Edit: " + product.name;
       window.scrollTo(0, 0);
     }
   } catch (err) {
@@ -335,7 +393,7 @@ async function editProduct(id) {
 }
 
 async function deleteProduct(id) {
-  if (confirm("Yakin ingin menghapus produk ini?")) {
+  if (confirm("Yakin hapus?")) {
     try {
       const res = await fetch(`/api/${currentType}/${id}`, {
         method: "DELETE",
@@ -343,7 +401,7 @@ async function deleteProduct(id) {
       const data = await res.json();
       if (data.success) loadProducts();
     } catch (err) {
-      alert("Gagal menghapus");
+      alert("Gagal hapus");
     }
   }
 }
@@ -351,23 +409,25 @@ async function deleteProduct(id) {
 function resetForm() {
   document.getElementById("productForm").reset();
   document.getElementById("productId").value = "";
-  document.getElementById("preview1").classList.add("hidden");
-  document.getElementById("preview2").classList.add("hidden");
-  document.getElementById("preview3").classList.add("hidden");
+
+  // Reset Dynamic Images to 1 empty input
+  const container = document.getElementById("imageInputsContainer");
+  container.innerHTML = "";
+  imageCounter = 0;
+  addImageInput();
 
   const titles = {
     products: "Tambah Produk Utama",
-    flashsale: "Tambah Produk Flash Sale",
+    flashsale: "Tambah Flash Sale",
     newrelease: "Tambah New Release",
   };
   document.getElementById("formTitle").textContent = titles[currentType];
 }
 
+// ================== HELPERS ==================
 function formatPrice(price) {
   return "Rp " + price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
-
-// ================== FITUR UPLOAD GAMBAR ==================
 function getProxyUrl(url) {
   if (!url) return "https://via.placeholder.com/400?text=DMK";
   if (url.includes("i.ibb.co"))
@@ -375,44 +435,34 @@ function getProxyUrl(url) {
   return url;
 }
 
-async function handleImageUpload(event, inputId, previewId) {
+async function handleImageUpload(event, inputEl) {
   const file = event.target.files[0];
   if (!file) return;
 
+  // Input element adalah sibling dari label, atau parent-nya. Sesuaikan selector.
+  // Di sini kita pass `this` dari onclick, tapi karena di dalam label, kita cari parent sibling.
+  const inputText = inputEl
+    .closest(".image-input-row")
+    .querySelector('input[type="text"]');
   const statusEl = document.getElementById("uploadStatus");
-  const previewEl = document.getElementById(previewId);
-  const inputUrl = document.getElementById(inputId);
 
-  statusEl.textContent = "Memproses gambar...";
+  statusEl.textContent = "Memproses...";
   statusEl.className = "text-xs text-yellow-500 mt-1";
 
-  if (!file.type.startsWith("image/")) {
-    statusEl.textContent = "Hanya file gambar yang diizinkan!";
-    statusEl.className = "text-xs text-red-500 mt-1";
-    return;
-  }
-
   try {
-    const compressedBase64 = await compressImage(file, 800, 0.8);
-    statusEl.textContent = "Mengupload...";
-
+    const compressed = await compressImage(file, 800, 0.8);
     const res = await fetch("/api/upload", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image: compressedBase64 }),
+      body: JSON.stringify({ image: compressed }),
     });
-
     const data = await res.json();
-
     if (data.success) {
-      inputUrl.value = data.url; // Simpan URL asli ke input
-      statusEl.textContent = "Upload berhasil!";
+      inputText.value = data.url; // Isi URL ke input text
+      statusEl.textContent = "Upload sukses!";
       statusEl.className = "text-xs text-green-500 mt-1";
-
-      previewEl.src = getProxyUrl(data.url); // Tampilkan via proxy
-      previewEl.classList.remove("hidden");
     } else {
-      throw new Error(data.message || "Gagal upload ke server");
+      throw new Error(data.message);
     }
   } catch (err) {
     statusEl.textContent = "Error: " + err.message;
@@ -431,27 +481,18 @@ function compressImage(file, maxWidth, quality) {
         const canvas = document.createElement("canvas");
         let width = img.width;
         let height = img.height;
-
         if (width > maxWidth) {
           height = (height * maxWidth) / width;
           width = maxWidth;
         }
-
         canvas.width = width;
         canvas.height = height;
-
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
-
-        const dataUrl = canvas.toDataURL("image/jpeg", quality);
-        resolve(dataUrl);
+        resolve(canvas.toDataURL("image/jpeg", quality));
       };
-      img.onerror = function (err) {
-        reject(err);
-      };
+      img.onerror = (err) => reject(err);
     };
-    reader.onerror = function (err) {
-      reject(err);
-    };
+    reader.onerror = (err) => reject(err);
   });
 }

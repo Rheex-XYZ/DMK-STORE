@@ -182,11 +182,14 @@ app.post("/api/checkout", async (req, res) => {
   }
 });
 
-// Flash Sale Settings
+// ... (kode awal tetap sama sampai rute Flash Sale Settings)
+
+// Flash Sale Settings (MODIFIED)
 app.get("/api/flashsale/settings", async (req, res) => {
   try {
     const settings = await readData("flashsale_settings");
-    res.json(settings || { endDate: null });
+    // Default structure
+    res.json(settings || { endDate: null, categoryImages: {} });
   } catch (err) {
     res.status(500).json({ success: false, message: "Gagal ambil pengaturan" });
   }
@@ -194,15 +197,27 @@ app.get("/api/flashsale/settings", async (req, res) => {
 
 app.post("/api/flashsale/settings", async (req, res) => {
   try {
-    const { endDate } = req.body;
-    await writeData("flashsale_settings", { endDate });
-    res.json({ success: true, message: "Waktu flash sale diperbarui" });
+    // Simpan endDate dan categoryImages
+    const { endDate, categoryImages } = req.body;
+
+    // Ambil setting lama agar tidak overwrite jika hanya update salah satu
+    const oldSettings = (await readData("flashsale_settings")) || {};
+
+    const newSettings = {
+      endDate: endDate || oldSettings.endDate,
+      categoryImages: categoryImages || oldSettings.categoryImages || {},
+    };
+
+    await writeData("flashsale_settings", newSettings);
+    res.json({ success: true, message: "Pengaturan diperbarui" });
   } catch (err) {
     res
       .status(500)
       .json({ success: false, message: "Gagal simpan pengaturan" });
   }
 });
+
+// ... (lanjut kode selanjutnya)
 
 // ==================== RUTE DINAMIS (DITEMPATKAN PALING BAWAH) ====================
 

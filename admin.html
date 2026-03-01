@@ -19,7 +19,6 @@
         color: #d4af37;
         border-top: 2px solid #d4af37;
       }
-      /* Admin specific styles */
       .form-section {
         margin-bottom: 1rem;
         padding-bottom: 1rem;
@@ -31,6 +30,12 @@
         font-size: 0.9rem;
         text-transform: uppercase;
         letter-spacing: 1px;
+      }
+      .image-input-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 8px;
       }
     </style>
   </head>
@@ -83,7 +88,6 @@
 
     <!-- ADMIN DASHBOARD -->
     <div id="dashboard" class="hidden">
-      <!-- Navbar Admin -->
       <nav
         class="bg-gray-900 border-b border-gray-800 p-4 flex justify-between items-center sticky top-0 z-40"
       >
@@ -104,7 +108,6 @@
         </div>
       </nav>
 
-      <!-- Tab Navigation -->
       <div class="container mx-auto px-6 pt-6">
         <div class="flex gap-2 border-b border-gray-800 pb-2">
           <button
@@ -132,47 +135,53 @@
       </div>
 
       <div class="container mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Form Tambah/Edit Produk -->
         <div
           class="lg:col-span-1 bg-gray-900 p-6 rounded-xl border border-gray-800 h-fit sticky top-20"
         >
-          <!-- Pengaturan Waktu Flash Sale (Khusus Tab Flash Sale) -->
+          <!-- SETTINGS FLASH SALE (EXPANDED) -->
           <div
             id="flashSaleTimerSettings"
             class="mb-6 p-4 bg-gray-800 rounded-lg border border-dashed border-yellow-500 hidden"
           >
-            <h3 class="text-yellow-500 font-bold mb-3 flex items-center gap-2">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              Pengaturan Waktu Flash Sale
+            <h3 class="text-yellow-500 font-bold mb-3">
+              Pengaturan Flash Sale
             </h3>
-            <div class="space-y-2">
-              <label class="text-xs text-gray-400"
-                >Tanggal & Jam Berakhir</label
-              >
+
+            <!-- Waktu -->
+            <div class="mb-4">
+              <label class="text-xs text-gray-400">Waktu Berakhir</label>
               <input
                 type="datetime-local"
                 id="flashSaleEndTime"
-                class="w-full bg-gray-700 p-2 rounded border border-gray-600 text-white"
+                class="w-full bg-gray-700 p-2 rounded border border-gray-600 text-white mt-1"
               />
-              <button
-                type="button"
-                onclick="saveFlashSaleSettings()"
-                class="w-full bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-2 rounded text-sm mt-2"
-              >
-                Simpan Jadwal
-              </button>
-              <p id="currentEndTime" class="text-xs text-gray-500 mt-2"></p>
             </div>
+
+            <!-- Cover Kategori -->
+            <div class="mb-4 border-t border-gray-700 pt-3">
+              <label class="text-xs text-gray-400 block mb-2"
+                >Cover Gambar Kategori (Opsional)</label
+              >
+              <p class="text-xs text-gray-500 mb-2">
+                Isi link gambar untuk tampilan depan kategori. Kosongkan jika
+                ingin otomatis dari produk.
+              </p>
+              <div id="categoryCoverInputs" class="space-y-2">
+                <!-- Diisi dinamis oleh JS -->
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onclick="saveFlashSaleSettings()"
+              class="w-full bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-2 rounded text-sm"
+            >
+              Simpan Pengaturan
+            </button>
+            <p
+              id="currentEndTime"
+              class="text-xs text-gray-500 mt-2 text-center"
+            ></p>
           </div>
 
           <h2 class="text-lg font-bold mb-4" id="formTitle">
@@ -185,24 +194,16 @@
           >
             <input type="hidden" id="productId" />
 
-            <!-- SECTION: IDENTITAS -->
             <div class="form-section">
-              <h4>Identitas Produk</h4>
+              <h4>Identitas</h4>
               <div class="mb-3">
-                <label class="text-sm text-gray-400"
-                  >Nama Produk (Internal)</label
-                >
+                <label class="text-sm text-gray-400">Nama Produk</label>
                 <input
                   type="text"
                   id="name"
                   required
-                  class="w-full bg-gray-800 p-2 rounded mt-1 border border-gray-700 focus:border-yellow-500 outline-none"
-                  placeholder="Contoh: Kaos DMK Hitam - L"
+                  class="w-full bg-gray-800 p-2 rounded mt-1 border border-gray-700 outline-none"
                 />
-                <p class="text-xs text-gray-500 mt-1">
-                  *Untuk Flash Sale, pastikan 'Kategori' di bawah sama dengan
-                  produk lain yang sejenis.
-                </p>
               </div>
               <div>
                 <label class="text-sm text-gray-400">Kategori</label>
@@ -211,14 +212,13 @@
                   id="category"
                   list="categoryList"
                   class="w-full bg-gray-800 p-2 rounded mt-1 border border-gray-700 outline-none"
-                  placeholder="Contoh: Kaos, Hoodie"
+                  placeholder="Contoh: Kaos"
                   required
                 />
                 <datalist id="categoryList"></datalist>
               </div>
             </div>
 
-            <!-- SECTION: STOK & UKURAN -->
             <div class="form-section">
               <h4>Varian & Stok</h4>
               <div class="grid grid-cols-2 gap-4">
@@ -227,7 +227,6 @@
                   <input
                     type="text"
                     id="size"
-                    placeholder="S / M / L"
                     class="w-full bg-gray-800 p-2 rounded mt-1 border border-gray-700 outline-none"
                   />
                 </div>
@@ -243,10 +242,8 @@
               </div>
             </div>
 
-            <!-- SECTION: HARGA -->
             <div class="form-section">
               <h4>Harga</h4>
-              <!-- Harga Jual (Harga Sale) -->
               <div class="mb-3">
                 <label class="text-sm text-gray-400">Harga Jual (Rp)</label>
                 <input
@@ -254,10 +251,8 @@
                   id="price"
                   required
                   class="w-full bg-gray-800 p-2 rounded mt-1 border border-gray-700 outline-none"
-                  placeholder="Harga setelah diskon"
                 />
               </div>
-              <!-- Harga Awal (Coret) - Khusus Flash Sale -->
               <div id="field-originalPrice" class="hidden">
                 <label class="text-sm text-gray-400"
                   >Harga Awal / Coret (Rp)</label
@@ -266,103 +261,43 @@
                   type="number"
                   id="originalPrice"
                   class="w-full bg-gray-800 p-2 rounded mt-1 border border-gray-700 outline-none"
-                  placeholder="Harga sebelum diskon"
                 />
               </div>
             </div>
 
-            <!-- SECTION: GAMBAR -->
+            <!-- DYNAMIC IMAGE INPUTS -->
             <div class="form-section border-none">
               <h4>Gambar Produk</h4>
-              <div class="mb-2">
-                <label class="text-xs text-gray-500"
-                  >Foto 1 (Utama - Wajib)</label
+              <div id="imageInputsContainer">
+                <!-- Container dinamis, diisi JS -->
+              </div>
+              <button
+                type="button"
+                onclick="addImageInput()"
+                class="mt-2 text-sm text-yellow-500 hover:text-yellow-400 flex items-center gap-1"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
                 >
-                <div class="flex gap-2 items-center mt-1">
-                  <input
-                    type="text"
-                    id="image1"
-                    placeholder="Link gambar"
-                    class="flex-1 bg-gray-800 p-2 rounded border border-gray-700 outline-none text-sm"
-                    required
-                  />
-                  <label
-                    class="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded cursor-pointer text-xs font-semibold whitespace-nowrap"
-                    >Upload<input
-                      type="file"
-                      id="imageFile1"
-                      accept="image/*"
-                      class="hidden"
-                      onchange="handleImageUpload(event, 'image1', 'preview1')"
-                  /></label>
-                </div>
-                <img
-                  id="preview1"
-                  class="mt-2 w-20 h-20 object-cover rounded border border-gray-700 hidden"
-                  alt="Preview 1"
-                />
-              </div>
-              <!-- Foto 2 -->
-              <div class="mb-2">
-                <label class="text-xs text-gray-500">Foto 2 (Opsional)</label>
-                <div class="flex gap-2 items-center mt-1">
-                  <input
-                    type="text"
-                    id="image2"
-                    class="flex-1 bg-gray-800 p-2 rounded border border-gray-700 outline-none text-sm"
-                  />
-                  <label
-                    class="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded cursor-pointer text-xs font-semibold whitespace-nowrap"
-                    >Upload<input
-                      type="file"
-                      id="imageFile2"
-                      accept="image/*"
-                      class="hidden"
-                      onchange="handleImageUpload(event, 'image2', 'preview2')"
-                  /></label>
-                </div>
-                <img
-                  id="preview2"
-                  class="mt-2 w-20 h-20 object-cover rounded border border-gray-700 hidden"
-                  alt="Preview 2"
-                />
-              </div>
-              <!-- Foto 3 -->
-              <div class="mb-2">
-                <label class="text-xs text-gray-500">Foto 3 (Opsional)</label>
-                <div class="flex gap-2 items-center mt-1">
-                  <input
-                    type="text"
-                    id="image3"
-                    class="flex-1 bg-gray-800 p-2 rounded border border-gray-700 outline-none text-sm"
-                  />
-                  <label
-                    class="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded cursor-pointer text-xs font-semibold whitespace-nowrap"
-                    >Upload<input
-                      type="file"
-                      id="imageFile3"
-                      accept="image/*"
-                      class="hidden"
-                      onchange="handleImageUpload(event, 'image3', 'preview3')"
-                  /></label>
-                </div>
-                <img
-                  id="preview3"
-                  class="mt-2 w-20 h-20 object-cover rounded border border-gray-700 hidden"
-                  alt="Preview 3"
-                />
-              </div>
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Tambah Kolom Gambar
+              </button>
               <p id="uploadStatus" class="text-xs text-gray-500 mt-1 h-4"></p>
             </div>
 
-            <!-- SECTION: DESKRIPSI -->
             <div>
               <label class="text-sm text-gray-400">Deskripsi</label>
               <textarea
                 id="description"
-                rows="3"
+                rows="2"
                 class="w-full bg-gray-800 p-2 rounded mt-1 border border-gray-700 outline-none"
-                placeholder="Deskripsi singkat produk..."
               ></textarea>
             </div>
 
@@ -384,12 +319,12 @@
           </form>
         </div>
 
-        <!-- Daftar Produk -->
         <div class="lg:col-span-2">
           <h2 class="text-lg font-bold mb-4" id="listTitle">Daftar Produk</h2>
-          <div id="productList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Produk akan di-render di sini -->
-          </div>
+          <div
+            id="productList"
+            class="grid grid-cols-1 md:grid-cols-2 gap-4"
+          ></div>
         </div>
       </div>
     </div>
