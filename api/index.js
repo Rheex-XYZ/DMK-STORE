@@ -182,30 +182,35 @@ app.post("/api/checkout", async (req, res) => {
   }
 });
 
-// ... (kode awal tetap sama sampai rute Flash Sale Settings)
-
-// Flash Sale Settings (MODIFIED)
+// ==================== FLASH SALE SETTINGS (FIXED) ====================
+// GET: Ambil pengaturan
 app.get("/api/flashsale/settings", async (req, res) => {
   try {
     const settings = await readData("flashsale_settings");
-    // Default structure
+    // Pastikan mengembalikan struktur default jika kosong
     res.json(settings || { endDate: null, categoryImages: {} });
   } catch (err) {
     res.status(500).json({ success: false, message: "Gagal ambil pengaturan" });
   }
 });
 
+// POST: Simpan pengaturan (Waktu & Cover Kategori)
 app.post("/api/flashsale/settings", async (req, res) => {
   try {
-    // Simpan endDate dan categoryImages
+    // Ambil data dari body
     const { endDate, categoryImages } = req.body;
 
-    // Ambil setting lama agar tidak overwrite jika hanya update salah satu
+    // Ambil setting lama agar tidak overwrite data yang tidak dikirim
     const oldSettings = (await readData("flashsale_settings")) || {};
 
+    // Bentuk object baru dengan merge data lama dan baru
     const newSettings = {
       endDate: endDate || oldSettings.endDate,
-      categoryImages: categoryImages || oldSettings.categoryImages || {},
+      // Jika categoryImages dikirim (bahkan object kosong), pakai itu. Kalau tidak, pakai data lama.
+      categoryImages:
+        categoryImages !== undefined
+          ? categoryImages
+          : oldSettings.categoryImages || {},
     };
 
     await writeData("flashsale_settings", newSettings);
@@ -216,8 +221,6 @@ app.post("/api/flashsale/settings", async (req, res) => {
       .json({ success: false, message: "Gagal simpan pengaturan" });
   }
 });
-
-// ... (lanjut kode selanjutnya)
 
 // ==================== RUTE DINAMIS (DITEMPATKAN PALING BAWAH) ====================
 
@@ -311,7 +314,7 @@ app.put("/api/:type/:id", async (req, res) => {
   }
 });
 
-// 5. Hapus Produk (Dinamis)
+// 6. Hapus Produk (Dinamis)
 app.delete("/api/:type/:id", async (req, res) => {
   try {
     const type = req.params.type;

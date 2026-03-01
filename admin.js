@@ -3,7 +3,7 @@ let currentType = "products";
 let variantCounter = 0;
 let imageCounter = 0;
 let flashSaleSettings = {};
-let selectedProductIds = new Set(); // Menyimpan ID yang dipilih
+let selectedProductIds = new Set();
 
 document.addEventListener("DOMContentLoaded", () => {
   const isLoggedIn = localStorage.getItem("dmk_admin_logged_in");
@@ -58,9 +58,8 @@ function logout() {
 // ================== SWITCH TAB ==================
 function switchTab(type) {
   currentType = type;
-  selectedProductIds.clear(); // Reset pilihan saat pindah tab
+  selectedProductIds.clear();
 
-  // Reset Select All Checkbox
   const selectAllCb = document.getElementById("selectAllCheckbox");
   if (selectAllCb) selectAllCb.checked = false;
 
@@ -75,18 +74,17 @@ function switchTab(type) {
   const origPriceField = document.getElementById("field-originalPrice");
   const bulkBar = document.getElementById("bulkActionsBar");
 
-  // Default: Tampilkan Form Standar
   standardForm.classList.remove("hidden");
   flashForm.classList.add("hidden");
   origPriceField.classList.add("hidden");
-  bulkBar.classList.add("hidden"); // Sembunyikan bulk bar default
+  bulkBar.classList.add("hidden");
 
   if (type === "flashsale") {
     timerSettings.classList.remove("hidden");
     flashForm.classList.remove("hidden");
     standardForm.classList.add("hidden");
     origPriceField.classList.remove("hidden");
-    bulkBar.classList.remove("hidden"); // TAMPILKAN BULK BAR untuk Flash Sale
+    bulkBar.classList.remove("hidden");
 
     document.getElementById("fsBatchCategory").value = "";
     document.getElementById("fsBatchPrice").value = "";
@@ -116,7 +114,10 @@ async function loadFlashSaleSettings() {
   try {
     const res = await fetch("/api/flashsale/settings");
     const settings = await res.json();
-    flashSaleSettings = settings || {};
+    // Pastikan struktur default
+    flashSaleSettings = settings || { endDate: null, categoryImages: {} };
+    if (!flashSaleSettings.categoryImages)
+      flashSaleSettings.categoryImages = {};
 
     const inputEl = document.getElementById("flashSaleEndTime");
     const infoEl = document.getElementById("currentEndTime");
@@ -142,7 +143,8 @@ async function loadFlashSaleSettings() {
 
 function renderCategoryCovers() {
   const listEl = document.getElementById("categoryCoverList");
-  const covers = flashSaleSettings.covers || {};
+  // UBAH: Gunakan 'categoryImages'
+  const covers = flashSaleSettings.categoryImages || {};
 
   if (Object.keys(covers).length === 0) {
     listEl.innerHTML =
@@ -176,7 +178,7 @@ async function saveFlashSaleSettings() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         endDate: new Date(inputVal).toISOString(),
-        covers: flashSaleSettings.covers || {},
+        categoryImages: flashSaleSettings.categoryImages || {}, // UBAH: Gunakan 'categoryImages'
       }),
     });
     const data = await res.json();
@@ -196,14 +198,15 @@ async function saveCategoryCover() {
   if (!catName || !catImg)
     return alert("Nama kategori dan gambar wajib diisi!");
 
-  if (!flashSaleSettings.covers) flashSaleSettings.covers = {};
-  flashSaleSettings.covers[catName] = catImg;
+  // UBAH: Gunakan 'categoryImages'
+  if (!flashSaleSettings.categoryImages) flashSaleSettings.categoryImages = {};
+  flashSaleSettings.categoryImages[catName] = catImg;
 
   try {
     const res = await fetch("/api/flashsale/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(flashSaleSettings),
+      body: JSON.stringify(flashSaleSettings), // Mengirim full object { endDate, categoryImages }
     });
     const data = await res.json();
     if (data.success) {
@@ -219,7 +222,9 @@ async function saveCategoryCover() {
 
 async function deleteCategoryCover(catName) {
   if (!confirm(`Hapus cover untuk kategori "${catName}"?`)) return;
-  delete flashSaleSettings.covers[catName];
+
+  // UBAH: Gunakan 'categoryImages'
+  delete flashSaleSettings.categoryImages[catName];
 
   try {
     await fetch("/api/flashsale/settings", {
@@ -253,7 +258,7 @@ async function handleCoverUpload(event) {
 // ================== BULK ACTIONS LOGIC ==================
 function toggleSelectAll(source) {
   const checkboxes = document.querySelectorAll(".product-checkbox");
-  selectedProductIds.clear(); // Reset dulu
+  selectedProductIds.clear();
 
   checkboxes.forEach((cb) => {
     cb.checked = source.checked;
@@ -272,7 +277,6 @@ function updateSelection(id, isChecked) {
   }
   updateSelectedCount();
 
-  // Cek apakah semua checkbox tercentat, maka selectAll aktif
   const totalCheckboxes = document.querySelectorAll(".product-checkbox").length;
   const totalChecked = selectedProductIds.size;
   const selectAllCb = document.getElementById("selectAllCheckbox");
@@ -281,7 +285,7 @@ function updateSelection(id, isChecked) {
     selectAllCb.checked = true;
     selectAllCb.indeterminate = false;
   } else if (totalChecked > 0) {
-    selectAllCb.indeterminate = true; // Kondisi sebagian
+    selectAllCb.indeterminate = true;
   } else {
     selectAllCb.checked = false;
     selectAllCb.indeterminate = false;
@@ -303,7 +307,6 @@ async function deleteSelectedProducts() {
   let successCount = 0;
 
   try {
-    // Hapus paralel
     const promises = ids.map((id) =>
       fetch(`/api/${currentType}/${id}`, { method: "DELETE" }),
     );
@@ -315,7 +318,7 @@ async function deleteSelectedProducts() {
 
     alert(`Berhasil menghapus ${successCount} produk.`);
     selectedProductIds.clear();
-    loadProducts(); // Reload
+    loadProducts();
   } catch (err) {
     alert("Terjadi error saat penghapusan massal.");
   }
@@ -335,7 +338,6 @@ async function deleteAllFlashSale() {
   if (!confirmation2) return;
 
   try {
-    // Ambil dulu semua ID
     const res = await fetch("/api/flashsale");
     const products = await res.json();
 
@@ -520,7 +522,7 @@ async function saveFlashSaleBatch(e) {
 async function loadProducts() {
   const listEl = document.getElementById("productList");
   listEl.innerHTML = '<p class="text-gray-500">Memuat...</p>';
-  selectedProductIds.clear(); // Reset pilihan saat reload
+  selectedProductIds.clear();
   updateSelectedCount();
 
   try {
@@ -552,7 +554,6 @@ async function loadProducts() {
             ? `<span class="text-xs bg-gray-700 px-2 py-1 rounded ml-2">${p.size || "-"}</span>`
             : "";
 
-        // Checkbox hanya untuk Flash Sale
         const checkboxHtml =
           currentType === "flashsale"
             ? `<input type="checkbox" class="product-checkbox absolute top-2 left-2 custom-checkbox" value="${p.id}" onchange="updateSelection(${p.id}, this.checked)">`
