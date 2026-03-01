@@ -138,7 +138,6 @@ function renderCartItems() {
     const itemEl = document.createElement("div");
     itemEl.className = "cart-item";
     itemEl.innerHTML = `
-      <!-- PERUBAHAN: Gunakan Proxy -->
       <div class="cart-item-image">
         <img src="${getProxyUrl(item.image)}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/80x80/1a1a1a/d4af37?text=DMK'">
       </div>
@@ -243,7 +242,13 @@ async function confirmCheckout() {
       let message = `Halo Kak, saya mau order dari DMK Store:\n\n`;
       currentCheckoutItems.forEach((item, index) => {
         message += `${index + 1}. ${item.name} - ${formatPrice(item.price)}\n`;
-        message += `   Link Foto: ${item.image}\n`;
+
+        // PERBAIKAN: Gunakan Link Proxy Absolut untuk WhatsApp
+        const linkFoto = new URL(
+          getProxyUrl(item.image),
+          window.location.origin,
+        ).href;
+        message += `   Link Foto: ${linkFoto}\n`;
       });
 
       const total = currentCheckoutItems.reduce(
@@ -358,7 +363,6 @@ function renderNewReleaseProducts(category) {
               .map(
                 (img, i) => `
                 <div class="product-slide">
-                    <!-- PERUBAHAN: Gunakan Proxy -->
                     <img src="${getProxyUrl(img)}" alt="${product.name} - ${i + 1}" onerror="this.src='https://via.placeholder.com/400x400/1a1a1a/22c55e?text=NEW'">
                 </div>
             `,

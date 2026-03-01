@@ -434,6 +434,8 @@ function checkoutAll() {
   openCheckoutModal(cart, true);
 }
 
+// ... (kode sebelumnya tetap sama sampai fungsi confirmCheckout)
+
 // ==================== FUNGSI MODAL CHECKOUT ====================
 
 function openCheckoutModal(items, fromCart = false) {
@@ -527,7 +529,16 @@ async function confirmCheckout() {
       let message = `Halo Kak, saya mau order dari DMK Store:\n\n`;
       currentCheckoutItems.forEach((item, index) => {
         message += `${index + 1}. ${item.name} - ${formatPrice(item.price)}\n`;
-        message += `   Link Foto: ${item.image}\n`;
+
+        // --- PERUBAHAN PENTING DISINI ---
+        // Ubah link gambar menjadi link proxy absolut (domain-anda.com/api/image?url=...)
+        // Agar link yang dikirim ke WA bisa dibuka meski ISP memblokir i.ibb.co
+        const linkFoto = new URL(
+          getProxyUrl(item.image),
+          window.location.origin,
+        ).href;
+        message += `   Link Foto: ${linkFoto}\n`;
+        // --------------------------------
       });
       const total = currentCheckoutItems.reduce(
         (sum, item) => sum + item.price,
@@ -560,6 +571,8 @@ async function confirmCheckout() {
     showToast("Terjadi kesalahan saat checkout.");
   }
 }
+
+// ... (kode setelahnya tetap sama)
 
 // ==================== FUNGSI NAVIGASI ====================
 function toggleMenu() {

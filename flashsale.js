@@ -168,7 +168,6 @@ function renderCartItems() {
     const itemEl = document.createElement("div");
     itemEl.className = "cart-item";
     itemEl.innerHTML = `
-      <!-- PERUBAHAN: Gunakan Proxy -->
       <div class="cart-item-image"><img src="${getProxyUrl(item.image)}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/80x80/1a1a1a/d4af37?text=DMK'"></div>
       <div class="cart-item-info"><h4 class="cart-item-name">${item.name}</h4><span class="cart-item-price">${formatPrice(item.price)}</span></div>
       <button class="cart-item-remove" onclick="removeFromCart(${item.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -263,7 +262,13 @@ async function confirmCheckout() {
       let message = `Halo Kak, saya mau order dari DMK Store:\n\n`;
       currentCheckoutItems.forEach((item, index) => {
         message += `${index + 1}. ${item.name} - ${formatPrice(item.price)}\n`;
-        message += `   Link Foto: ${item.image}\n`;
+
+        // PERBAIKAN: Gunakan Link Proxy Absolut untuk WhatsApp
+        const linkFoto = new URL(
+          getProxyUrl(item.image),
+          window.location.origin,
+        ).href;
+        message += `   Link Foto: ${linkFoto}\n`;
       });
       const total = currentCheckoutItems.reduce(
         (sum, item) => sum + item.price,
@@ -378,7 +383,6 @@ function renderFlashSaleProducts() {
               .map(
                 (img, i) => `
                 <div class="product-slide">
-                    <!-- PERUBAHAN: Gunakan Proxy -->
                     <img src="${getProxyUrl(img)}" alt="${product.name} - ${i + 1}" onerror="this.src='https://via.placeholder.com/400x400/1a1a1a/ef4444?text=Error'">
                 </div>
             `,
