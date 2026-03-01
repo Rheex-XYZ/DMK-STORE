@@ -35,7 +35,6 @@
         cursor: pointer;
         font-weight: bold;
       }
-      /* Style untuk dynamic image row */
       .image-row {
         display: flex;
         gap: 8px;
@@ -48,6 +47,13 @@
         object-fit: cover;
         border-radius: 4px;
         border: 1px solid #555;
+      }
+      /* Style untuk checkbox kustom */
+      .custom-checkbox {
+        width: 18px;
+        height: 18px;
+        accent-color: #d4af37; /* Warna kuning */
+        cursor: pointer;
       }
     </style>
   </head>
@@ -190,8 +196,7 @@
               Cover Kategori Flash Sale
             </h3>
             <p class="text-xs text-gray-400 mb-3">
-              Atur gambar sampul untuk setiap kategori yang akan tampil di
-              halaman utama.
+              Atur gambar sampul untuk setiap kategori.
             </p>
 
             <div class="space-y-3" id="categoryCoverList">
@@ -205,7 +210,7 @@
               <input
                 type="text"
                 id="inputCoverCategory"
-                placeholder="Nama Kategori (cth: Baju)"
+                placeholder="Nama Kategori"
                 class="w-full bg-gray-700 p-2 rounded border border-gray-600 text-sm mb-2"
               />
               <input
@@ -229,12 +234,12 @@
                 onclick="saveCategoryCover()"
                 class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded text-xs"
               >
-                Simpan Cover Kategori
+                Simpan Cover
               </button>
             </div>
           </div>
 
-          <!-- FORM STANDAR (Untuk Produk Utama & New Release) -->
+          <!-- FORM STANDAR -->
           <div id="standardFormContainer">
             <h2 class="text-lg font-bold mb-4" id="formTitle">
               Tambah Produk Baru
@@ -316,7 +321,7 @@
                   >Gambar Produk</label
                 >
                 <div id="productImageContainer" class="space-y-2">
-                  <!-- Dynamic rows will be added here -->
+                  <!-- Dynamic rows -->
                 </div>
                 <button
                   type="button"
@@ -326,7 +331,6 @@
                   + Tambah Gambar
                 </button>
               </div>
-              <!-- END DYNAMIC IMAGES -->
 
               <div>
                 <label class="text-sm text-gray-400">Deskripsi</label>
@@ -405,7 +409,7 @@
                 Daftar Varian (Gambar & Ukuran)
               </h4>
               <div id="variantList">
-                <!-- Baris varian akan diisi JS di sini -->
+                <!-- Baris varian -->
               </div>
 
               <button
@@ -428,7 +432,43 @@
 
         <!-- Daftar Produk -->
         <div class="lg:col-span-2">
-          <h2 class="text-lg font-bold mb-4" id="listTitle">Daftar Produk</h2>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold" id="listTitle">Daftar Produk</h2>
+          </div>
+
+          <!-- BULK ACTIONS BAR (Hanya untuk Flash Sale) -->
+          <div
+            id="bulkActionsBar"
+            class="hidden mb-4 bg-gray-800 p-3 rounded-lg flex flex-wrap items-center gap-4 border border-gray-700 sticky top-16 z-30"
+          >
+            <div class="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="selectAllCheckbox"
+                onchange="toggleSelectAll(this)"
+                class="custom-checkbox"
+              />
+              <label
+                for="selectAllCheckbox"
+                class="text-sm text-gray-300 cursor-pointer select-none"
+                >Pilih Semua</label
+              >
+            </div>
+            <button
+              onclick="deleteSelectedProducts()"
+              class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+              id="btnDeleteSelected"
+            >
+              Hapus Terpilih (<span id="selectedCount">0</span>)
+            </button>
+            <button
+              onclick="deleteAllFlashSale()"
+              class="bg-gray-700 hover:bg-red-800 px-4 py-2 rounded text-xs font-bold ml-auto border border-gray-600"
+            >
+              Hapus Semua Produk FS
+            </button>
+          </div>
+
           <div
             id="productList"
             class="grid grid-cols-1 md:grid-cols-2 gap-4"

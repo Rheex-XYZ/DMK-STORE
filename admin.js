@@ -1,8 +1,9 @@
 // ================== ADMIN LOGIC ==================
 let currentType = "products";
 let variantCounter = 0;
-let imageCounter = 0; // Counter untuk dynamic image rows
-let flashSaleSettings = {}; // Cache settings
+let imageCounter = 0;
+let flashSaleSettings = {};
+let selectedProductIds = new Set(); // Menyimpan ID yang dipilih
 
 document.addEventListener("DOMContentLoaded", () => {
   const isLoggedIn = localStorage.getItem("dmk_admin_logged_in");
@@ -57,6 +58,11 @@ function logout() {
 // ================== SWITCH TAB ==================
 function switchTab(type) {
   currentType = type;
+  selectedProductIds.clear(); // Reset pilihan saat pindah tab
+
+  // Reset Select All Checkbox
+  const selectAllCb = document.getElementById("selectAllCheckbox");
+  if (selectAllCb) selectAllCb.checked = false;
 
   document
     .querySelectorAll(".tab-btn")
@@ -67,24 +73,26 @@ function switchTab(type) {
   const standardForm = document.getElementById("standardFormContainer");
   const flashForm = document.getElementById("flashSaleFormContainer");
   const origPriceField = document.getElementById("field-originalPrice");
+  const bulkBar = document.getElementById("bulkActionsBar");
 
   // Default: Tampilkan Form Standar
   standardForm.classList.remove("hidden");
   flashForm.classList.add("hidden");
   origPriceField.classList.add("hidden");
+  bulkBar.classList.add("hidden"); // Sembunyikan bulk bar default
 
   if (type === "flashsale") {
     timerSettings.classList.remove("hidden");
-    flashForm.classList.remove("hidden"); // Tampilkan Form Batch
-    standardForm.classList.add("hidden"); // Sembunyikan Form Standar
-    origPriceField.classList.remove("hidden"); // Tampilkan harga coret jika edit via standar
+    flashForm.classList.remove("hidden");
+    standardForm.classList.add("hidden");
+    origPriceField.classList.remove("hidden");
+    bulkBar.classList.remove("hidden"); // TAMPILKAN BULK BAR untuk Flash Sale
 
-    // Reset form batch
     document.getElementById("fsBatchCategory").value = "";
     document.getElementById("fsBatchPrice").value = "";
     document.getElementById("fsBatchOriginal").value = "";
     document.getElementById("variantList").innerHTML = "";
-    addVariantRow(); // Tambah 1 baris kosong default
+    addVariantRow();
 
     loadFlashSaleSettings();
   } else if (type === "newrelease") {
@@ -100,7 +108,7 @@ function switchTab(type) {
   };
   document.getElementById("listTitle").textContent = titles[type].list;
   loadProducts();
-  resetForm(); // Reset form standar saat pindah tab
+  resetForm();
 }
 
 // ================== FLASH SALE SETTINGS & CATEGORY COVER ==================
@@ -108,7 +116,7 @@ async function loadFlashSaleSettings() {
   try {
     const res = await fetch("/api/flashsale/settings");
     const settings = await res.json();
-    flashSaleSettings = settings || {}; // Simpan ke cache
+    flashSaleSettings = settings || {};
 
     const inputEl = document.getElementById("flashSaleEndTime");
     const infoEl = document.getElementById("currentEndTime");
@@ -126,7 +134,7 @@ async function loadFlashSaleSettings() {
       infoEl.textContent = "Belum ada jadwal.";
     }
 
-    renderCategoryCovers(); // Render daftar cover
+    renderCategoryCovers();
   } catch (err) {
     console.error("Gagal load settings", err);
   }
@@ -168,7 +176,7 @@ async function saveFlashSaleSettings() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         endDate: new Date(inputVal).toISOString(),
-        covers: flashSaleSettings.covers || {}, // Kirim ulang cover agar tidak hilang
+        covers: flashSaleSettings.covers || {},
       }),
     });
     const data = await res.json();
@@ -242,6 +250,111 @@ async function handleCoverUpload(event) {
   }
 }
 
+// ================== BULK ACTIONS LOGIC ==================
+function toggleSelectAll(source) {
+  const checkboxes = document.querySelectorAll(".product-checkbox");
+  selectedProductIds.clear(); // Reset dulu
+
+  checkboxes.forEach((cb) => {
+    cb.checked = source.checked;
+    if (source.checked) {
+      selectedProductIds.add(parseInt(cb.value));
+    }
+  });
+  updateSelectedCount();
+}
+
+function updateSelection(id, isChecked) {
+  if (isChecked) {
+    selectedProductIds.add(id);
+  } else {
+    selectedProductIds.delete(id);
+  }
+  updateSelectedCount();
+
+  // Cek apakah semua checkbox tercentat, maka selectAll aktif
+  const totalCheckboxes = document.querySelectorAll(".product-checkbox").length;
+  const totalChecked = selectedProductIds.size;
+  const selectAllCb = document.getElementById("selectAllCheckbox");
+
+  if (totalChecked === totalCheckboxes && totalCheckboxes > 0) {
+    selectAllCb.checked = true;
+    selectAllCb.indeterminate = false;
+  } else if (totalChecked > 0) {
+    selectAllCb.indeterminate = true; // Kondisi sebagian
+  } else {
+    selectAllCb.checked = false;
+    selectAllCb.indeterminate = false;
+  }
+}
+
+function updateSelectedCount() {
+  document.getElementById("selectedCount").textContent =
+    selectedProductIds.size;
+}
+
+async function deleteSelectedProducts() {
+  if (selectedProductIds.size === 0)
+    return alert("Tidak ada produk yang dipilih!");
+  if (!confirm(`Yakin hapus ${selectedProductIds.size} produk terpilih?`))
+    return;
+
+  const ids = Array.from(selectedProductIds);
+  let successCount = 0;
+
+  try {
+    // Hapus paralel
+    const promises = ids.map((id) =>
+      fetch(`/api/${currentType}/${id}`, { method: "DELETE" }),
+    );
+
+    const results = await Promise.all(promises);
+    results.forEach((res) => {
+      if (res.ok || res.status === 200) successCount++;
+    });
+
+    alert(`Berhasil menghapus ${successCount} produk.`);
+    selectedProductIds.clear();
+    loadProducts(); // Reload
+  } catch (err) {
+    alert("Terjadi error saat penghapusan massal.");
+  }
+}
+
+async function deleteAllFlashSale() {
+  if (currentType !== "flashsale") return;
+
+  const confirmation = confirm(
+    "PERINGATAN: Ini akan menghapus SEMUA produk Flash Sale secara permanen. Lanjutkan?",
+  );
+  if (!confirmation) return;
+
+  const confirmation2 = confirm(
+    "Apakah Anda benar-benar yakin? Tindakan ini tidak bisa dibatalkan.",
+  );
+  if (!confirmation2) return;
+
+  try {
+    // Ambil dulu semua ID
+    const res = await fetch("/api/flashsale");
+    const products = await res.json();
+
+    if (products.length === 0) {
+      return alert("Tidak ada produk untuk dihapus.");
+    }
+
+    const promises = products.map((p) =>
+      fetch(`/api/flashsale/${p.id}`, { method: "DELETE" }),
+    );
+
+    await Promise.all(promises);
+    alert("Semua produk Flash Sale telah dihapus.");
+    loadProducts();
+  } catch (err) {
+    alert("Gagal menghapus semua produk.");
+  }
+}
+
 // ================== DYNAMIC IMAGES (STANDARD FORM) ==================
 function addImageRow(url = "") {
   const container = document.getElementById("productImageContainer");
@@ -262,7 +375,6 @@ function addImageRow(url = "") {
   imageCounter++;
 }
 
-// Helper untuk upload gambar di baris spesifik
 async function handleStandardImageUpload(event, rowId) {
   const file = event.target.files[0];
   if (!file) return;
@@ -404,10 +516,12 @@ async function saveFlashSaleBatch(e) {
   }
 }
 
-// ================== PRODUCT CRUD (STANDARD) ==================
+// ================== PRODUCT CRUD ==================
 async function loadProducts() {
   const listEl = document.getElementById("productList");
   listEl.innerHTML = '<p class="text-gray-500">Memuat...</p>';
+  selectedProductIds.clear(); // Reset pilihan saat reload
+  updateSelectedCount();
 
   try {
     const res = await fetch(`/api/${currentType}`);
@@ -438,14 +552,21 @@ async function loadProducts() {
             ? `<span class="text-xs bg-gray-700 px-2 py-1 rounded ml-2">${p.size || "-"}</span>`
             : "";
 
+        // Checkbox hanya untuk Flash Sale
+        const checkboxHtml =
+          currentType === "flashsale"
+            ? `<input type="checkbox" class="product-checkbox absolute top-2 left-2 custom-checkbox" value="${p.id}" onchange="updateSelection(${p.id}, this.checked)">`
+            : "";
+
         return `
-        <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 flex gap-4">
-          <div class="relative">
+        <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 flex gap-4 relative">
+          ${checkboxHtml}
+          <div class="relative ml-6 md:ml-0">
             <img src="${getProxyUrl(mainImg)}" alt="${p.name}" class="w-24 h-24 object-cover rounded" onerror="this.src='https://via.placeholder.com/100'">
             ${extraImgCount}
           </div>
           <div class="flex-1">
-            <h3 class="font-bold text-yellow-500">${p.name} ${sizeInfo}</h3>
+            <h3 class="font-bold text-yellow-500 text-sm">${p.name} ${sizeInfo}</h3>
             <p class="text-sm text-gray-400">Kategori: ${p.category || "-"}</p>
             <p class="text-sm text-gray-400">Stok: ${p.stock}</p>
             ${priceDisplay}
@@ -476,12 +597,10 @@ async function populateCategoryOptions(currentProducts) {
     .join("");
 }
 
-// Save Standard Product
 async function saveProduct(e) {
   e.preventDefault();
   const id = document.getElementById("productId").value;
 
-  // Kumpulkan semua URL gambar dari container dinamis
   const imageInputs = document.querySelectorAll(".product-image-url");
   let images = [];
   imageInputs.forEach((input) => {
@@ -502,7 +621,7 @@ async function saveProduct(e) {
     stock: parseInt(document.getElementById("stock").value),
     category: document.getElementById("category").value,
     size: document.getElementById("size").value,
-    images: images, // Kirim array gambar
+    images: images,
     description: document.getElementById("description").value,
   };
 
@@ -534,9 +653,7 @@ async function saveProduct(e) {
 }
 
 async function editProduct(id) {
-  // Untuk Flash Sale, jika klik edit, kita pakai form standar (bukan batch)
   if (currentType === "flashsale") {
-    // Switch tampilan form
     document.getElementById("flashSaleFormContainer").classList.add("hidden");
     document.getElementById("standardFormContainer").classList.remove("hidden");
     document.getElementById("field-originalPrice").classList.remove("hidden");
@@ -556,13 +673,12 @@ async function editProduct(id) {
       document.getElementById("size").value = product.size || "";
       document.getElementById("description").value = product.description || "";
 
-      // Isi gambar dinamis
       const imageContainer = document.getElementById("productImageContainer");
-      imageContainer.innerHTML = ""; // Kosongkan dulu
+      imageContainer.innerHTML = "";
       if (product.images && product.images.length > 0) {
         product.images.forEach((imgUrl) => addImageRow(imgUrl));
       } else {
-        addImageRow(); // Tambah 1 baris kosong jika tidak ada gambar
+        addImageRow();
       }
 
       if (currentType === "flashsale" && product.originalPrice) {
@@ -576,7 +692,7 @@ async function editProduct(id) {
 }
 
 async function deleteProduct(id) {
-  if (confirm("Yakin hapus?")) {
+  if (confirm("Yakin hapus item ini?")) {
     try {
       const res = await fetch(`/api/${currentType}/${id}`, {
         method: "DELETE",
@@ -593,7 +709,6 @@ function resetForm() {
   document.getElementById("productForm").reset();
   document.getElementById("productId").value = "";
 
-  // Reset container gambar dan tambahkan 1 baris kosong
   const imageContainer = document.getElementById("productImageContainer");
   imageContainer.innerHTML = "";
   addImageRow();
@@ -609,7 +724,6 @@ function getProxyUrl(url) {
   return url;
 }
 
-// Fungsi kompres generik
 function compressImage(file, maxWidth, quality) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
