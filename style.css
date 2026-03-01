@@ -547,11 +547,10 @@ body {
   transform: scaleX(1);
 }
 
-/* PERBAIKAN: Image Container 1:1 */
+/* Image Container 1:1 */
 .product-image-container {
   position: relative;
   width: 100%;
-  /* Hapus height fixed, ganti aspect-ratio */
   aspect-ratio: 1 / 1;
   overflow: hidden;
   background: var(--bg-secondary);
@@ -569,13 +568,12 @@ body {
   position: relative;
 }
 
-/* PERBAIKAN: Gambar Tidak Terpotong (Contain) */
 .product-slide img {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* Ubah dari cover ke contain */
+  object-fit: contain;
   object-position: center;
-  background-color: var(--bg-secondary); /* Warna background sisa ruang */
+  background-color: var(--bg-secondary);
   transition: transform 0.5s ease;
 }
 
@@ -1201,7 +1199,6 @@ body {
     gap: 1.5rem;
   }
 
-  /* Hapus height fixed di mobile, biarkan aspect-ratio bekerja */
   .product-image-container {
     height: auto;
   }
@@ -1226,7 +1223,6 @@ body {
   }
 }
 
-/* Efek sembunyikan Logo dan Keranjang saat Menu Burger terbuka */
 body.menu-open .logo,
 body.menu-open .cart-btn {
   opacity: 0;
@@ -1236,7 +1232,6 @@ body.menu-open .cart-btn {
     visibility 0.3s ease;
 }
 
-/* Pastikan elemen tersebut memiliki transisi saat normal pun */
 .logo,
 .cart-btn {
   transition:
@@ -1248,7 +1243,6 @@ body.menu-open .cart-btn {
 
 /* ==================== STYLING STOK & HABIS ==================== */
 
-/* Tampilan Teks Stok */
 .product-stock {
   font-size: 0.85rem;
   font-weight: 500;
@@ -1264,7 +1258,6 @@ body.menu-open .cart-btn {
   font-weight: 700;
 }
 
-/* Badge "HABIS" di gambar */
 .sold-out-badge {
   position: absolute;
   top: 15px;
@@ -1279,7 +1272,6 @@ body.menu-open .cart-btn {
   letter-spacing: 1px;
 }
 
-/* Tombol Disabled saat Stok Habis */
 .btn-cart:disabled,
 .btn-buy:disabled {
   opacity: 0.5;
@@ -1291,7 +1283,6 @@ body.menu-open .cart-btn {
   box-shadow: none !important;
 }
 
-/* Menimpa style hover saat disabled */
 .btn-cart:disabled:hover,
 .btn-buy:disabled:hover {
   background: #444;
@@ -1544,7 +1535,7 @@ body.menu-open .cart-btn {
   box-shadow: 0 5px 15px rgba(37, 211, 102, 0.3);
 }
 
-/* ==================== PRODUCT DETAIL MODAL STYLE ==================== */
+/* ==================== PRODUCT DETAIL MODAL STYLE (PERBAIKAN 1:1) ==================== */
 
 .product-modal {
   position: fixed;
@@ -1572,15 +1563,21 @@ body.menu-open .cart-btn {
   transform: translate(-50%, -50%) scale(1);
 }
 
+/* PERBAIKAN: Gambar Modal 1:1 dan Tidak Terpotong */
 .product-modal-image {
   width: 100%;
-  height: 250px;
-  object-fit: cover;
+  height: auto; /* Hapus height fixed */
+  aspect-ratio: 1 / 1; /* Paksa rasio 1:1 */
+  object-fit: contain; /* Gambar utuh, tidak terpotong */
+  object-position: center;
+  background-color: var(--bg-secondary); /* Warna background sisa ruang */
   border-bottom: 1px solid var(--border-color);
 }
 
 .product-modal-info {
   padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .product-modal-price {
