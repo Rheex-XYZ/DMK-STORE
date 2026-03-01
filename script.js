@@ -3,9 +3,21 @@ let products = [];
 let cart = [];
 let currentCategory = "all";
 
-// Variabel untuk menampung item yang akan di-checkout (Beli Langsung atau dari Keranjang)
+// Variabel untuk menampung item yang akan di-checkout
 let currentCheckoutItems = [];
 let isCheckoutFromCart = false;
+
+// ==================== FUNGSI HELPER PROXY GAMBAR ====================
+// Solusi untuk DNS yang memblokir i.ibb.co
+function getProxyUrl(url) {
+  if (!url) return "https://via.placeholder.com/400?text=DMK+Store";
+  // Jika link mengandung i.ibb.co, arahkan ke API proxy kita
+  if (url.includes("i.ibb.co")) {
+    return `/api/image?url=${encodeURIComponent(url)}`;
+  }
+  // Jika bukan, kembalikan URL asli
+  return url;
+}
 
 // ==================== INISIALISASI ====================
 document.addEventListener("DOMContentLoaded", function () {
@@ -22,10 +34,7 @@ async function fetchProducts() {
     if (!response.ok) throw new Error("Gagal memuat data");
 
     products = await response.json();
-
-    // RENDER MENU KATEGORI OTOMATIS SETELAH DATA DITERIMA
     renderCategoryMenu();
-
     renderProducts(currentCategory);
   } catch (error) {
     console.error("Error:", error);
@@ -36,17 +45,15 @@ async function fetchProducts() {
   }
 }
 
-// ==================== RENDER KATEGORI DINAMIS (BARU) ====================
+// ==================== RENDER KATEGORI DINAMIS ====================
 function renderCategoryMenu() {
   const container = document.getElementById("categoryMenuContainer");
   if (!container) return;
 
-  // Ekstrak kategori unik dari produk yang sudah di-fetch
   const categories = [
     ...new Set(products.map((p) => p.category).filter((c) => c)),
   ];
 
-  // Tambahkan opsi "Semua Produk" di awal
   let html = `
     <a
       href="#"
@@ -56,9 +63,7 @@ function renderCategoryMenu() {
     >Semua Produk</a>
   `;
 
-  // Loop kategori dan buat link
   categories.forEach((cat) => {
-    // Kapitalisasi huruf pertama untuk tampilan
     const displayName = cat.charAt(0).toUpperCase() + cat.slice(1);
     html += `
       <a
@@ -193,7 +198,8 @@ function renderCartItems() {
     itemEl.className = "cart-item";
     itemEl.innerHTML = `
             <div class="cart-item-image">
-                <img src="${item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/80x80/1a1a1a/d4af37?text=DMK'">
+                <!-- PERUBAHAN: Gunakan Proxy untuk gambar keranjang -->
+                <img src="${getProxyUrl(item.image)}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/80x80/1a1a1a/d4af37?text=DMK'">
             </div>
             <div class="cart-item-info">
                 <h4 class="cart-item-name">${item.name}</h4>
@@ -231,7 +237,6 @@ function renderProducts(category) {
 
   if (!grid) return;
 
-  // Logika dinamis untuk judul
   let displayTitle = "Semua Produk";
   if (category !== "all") {
     displayTitle = `Koleksi ${category.charAt(0).toUpperCase() + category.slice(1)}`;
@@ -286,7 +291,8 @@ function renderProducts(category) {
                       .map(
                         (img, i) => `
                         <div class="product-slide">
-                            <img src="${img}" alt="${product.name} - ${i + 1}" onerror="this.src='https://via.placeholder.com/400x400/1a1a1a/d4af37?text=DMK+Store'">
+                            <!-- PERUBAHAN: Gunakan Proxy untuk gambar slider -->
+                            <img src="${getProxyUrl(img)}" alt="${product.name} - ${i + 1}" onerror="this.src='https://via.placeholder.com/400x400/1a1a1a/d4af37?text=DMK+Store'">
                         </div>
                     `,
                       )
@@ -343,7 +349,6 @@ function renderProducts(category) {
     });
   }, 100);
 
-  // Update active state untuk menu dinamis
   document
     .querySelectorAll("#categoryMenuContainer .menu-item")
     .forEach((item) => {
@@ -397,7 +402,7 @@ function updateSlider(productId) {
   });
 }
 
-// ==================== FUNGSI BELI & CHECKOUT (UPDATED) ====================
+// ==================== FUNGSI BELI & CHECKOUT ====================
 
 function buyNow(productId) {
   const product = products.find((p) => p.id === productId);
@@ -429,7 +434,7 @@ function checkoutAll() {
   openCheckoutModal(cart, true);
 }
 
-// ==================== FUNGSI MODAL CHECKOUT (DENGAN PARAMETER) ====================
+// ==================== FUNGSI MODAL CHECKOUT ====================
 
 function openCheckoutModal(items, fromCart = false) {
   currentCheckoutItems = items;
@@ -671,8 +676,15 @@ function openProductDetail(productId) {
     ? `<span style="color:#ef4444; font-weight:bold;">Stok Habis</span>`
     : `<span style="color:#22c55e;">Stok: ${product.stock}</span>`;
 
+  // Gunakan Proxy untuk gambar modal
+  const mainImage =
+    product.images && product.images[0]
+      ? product.images[0]
+      : "https://via.placeholder.com/500x300/1a1a1a/d4af37?text=DMK";
+
   content.innerHTML = `
-        <img src="${product.images && product.images[0] ? product.images[0] : "https://via.placeholder.com/500x300/1a1a1a/d4af37?text=DMK"}" alt="${product.name}" class="product-modal-image" onerror="this.src='https://via.placeholder.com/500x300/1a1a1a/d4af37?text=DMK'">
+        <!-- PERUBAHAN: Gunakan Proxy untuk gambar modal -->
+        <img src="${getProxyUrl(mainImage)}" alt="${product.name}" class="product-modal-image" onerror="this.src='https://via.placeholder.com/500x300/1a1a1a/d4af37?text=DMK'">
         <div class="product-modal-info">
             <div class="product-modal-price">${formatPrice(product.price)}</div>
             <div class="product-modal-meta">

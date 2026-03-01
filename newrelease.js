@@ -1,10 +1,18 @@
 let newReleaseProducts = [];
 let cart = [];
-let currentCategory = "all"; // State untuk kategori aktif
+let currentCategory = "all";
 
-// Variabel untuk checkout
 let currentCheckoutItems = [];
 let isCheckoutFromCart = false;
+
+// ==================== FUNGSI HELPER PROXY GAMBAR ====================
+function getProxyUrl(url) {
+  if (!url) return "https://via.placeholder.com/400?text=DMK";
+  if (url.includes("i.ibb.co")) {
+    return `/api/image?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
 
 document.addEventListener("DOMContentLoaded", function () {
   loadCart();
@@ -16,7 +24,7 @@ async function fetchNewReleaseProducts() {
     const res = await fetch("/api/newrelease");
     if (res.ok) {
       newReleaseProducts = await res.json();
-      renderCategoryTabs(); // Render tab kategori otomatis
+      renderCategoryTabs();
       renderNewReleaseProducts("all");
     } else {
       console.error("Gagal memuat new release");
@@ -31,15 +39,12 @@ function renderCategoryTabs() {
   const container = document.querySelector(".category-tabs");
   if (!container) return;
 
-  // Ekstrak kategori unik
   const categories = [
     ...new Set(newReleaseProducts.map((p) => p.category).filter((c) => c)),
   ];
 
-  // Buat HTML untuk tombol "Semua"
   let html = `<button class="category-tab ${currentCategory === "all" ? "active" : ""}" onclick="filterNewRelease('all')">Semua</button>`;
 
-  // Loop kategori dan buat tombol
   categories.forEach((cat) => {
     const displayName = cat.charAt(0).toUpperCase() + cat.slice(1);
     html += `<button class="category-tab ${currentCategory === cat ? "active" : ""}" onclick="filterNewRelease('${cat}')">${displayName}</button>`;
@@ -133,8 +138,9 @@ function renderCartItems() {
     const itemEl = document.createElement("div");
     itemEl.className = "cart-item";
     itemEl.innerHTML = `
+      <!-- PERUBAHAN: Gunakan Proxy -->
       <div class="cart-item-image">
-        <img src="${item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/80x80/1a1a1a/d4af37?text=DMK'">
+        <img src="${getProxyUrl(item.image)}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/80x80/1a1a1a/d4af37?text=DMK'">
       </div>
       <div class="cart-item-info">
         <h4 class="cart-item-name">${item.name}</h4>
@@ -260,7 +266,7 @@ async function confirmCheckout() {
       }
 
       closeCheckoutModal();
-      fetchNewReleaseProducts(); // Refresh produk
+      fetchNewReleaseProducts();
       showToast("Checkout berhasil!");
     } else {
       showToast("Gagal update stok.");
@@ -313,7 +319,7 @@ function renderNewReleaseProducts(category) {
   const emptyState = document.getElementById("emptyState");
 
   currentCategory = category;
-  renderCategoryTabs(); // Update active state pada tab
+  renderCategoryTabs();
 
   let filteredProducts =
     category === "all"
@@ -336,7 +342,6 @@ function renderNewReleaseProducts(category) {
     card.className = "new-release-card";
     const isOutOfStock = product.stock <= 0;
 
-    // Ambil gambar, gunakan placeholder jika tidak ada
     const productImages =
       product.images && product.images.length > 0
         ? product.images
@@ -353,7 +358,8 @@ function renderNewReleaseProducts(category) {
               .map(
                 (img, i) => `
                 <div class="product-slide">
-                    <img src="${img}" alt="${product.name} - ${i + 1}" onerror="this.src='https://via.placeholder.com/400x400/1a1a1a/22c55e?text=NEW'">
+                    <!-- PERUBAHAN: Gunakan Proxy -->
+                    <img src="${getProxyUrl(img)}" alt="${product.name} - ${i + 1}" onerror="this.src='https://via.placeholder.com/400x400/1a1a1a/22c55e?text=NEW'">
                 </div>
             `,
               )

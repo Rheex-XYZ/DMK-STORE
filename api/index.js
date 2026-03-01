@@ -118,15 +118,44 @@ app.post("/api/upload", async (req, res) => {
   }
 });
 
-// ==================== PERBAIKAN URUTAN RUTE ====================
-// RUTE SPESIFIK HARUS DI ATAS RUTE DINAMIS (/api/:type)
+// ==================== IMAGE PROXY (SOLUSI DNS BLOKIR) ====================
+// Rute ini harus di atas rute dinamis agar tidak tertangkap /api/:type
+app.get("/api/image", async (req, res) => {
+  const { url } = req.query;
 
-// 6. Checkout (DIPINDAHKAN KE ATAS)
+  // Validasi keamanan: Hanya izinkan gambar dari i.ibb.co
+  if (!url || !url.includes("i.ibb.co")) {
+    return res.status(400).send("URL tidak valid");
+  }
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      return res.status(404).send("Gambar tidak ditemukan");
+    }
+
+    const contentType = response.headers.get("content-type");
+    const buffer = await response.buffer();
+
+    // Set header agar browser menganggap ini gambar
+    res.setHeader("Content-Type", contentType || "image/jpeg");
+    // Cache gambar selama 1 tahun di CDN Vercel
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    res.send(buffer);
+  } catch (err) {
+    console.error("Proxy Error:", err);
+    res.status(500).send("Gagal mengambil gambar");
+  }
+});
+// =========================================================================
+
+// ==================== RUTE SPESIFIK & DINAMIS ====================
+
+// 6. Checkout
 app.post("/api/checkout", async (req, res) => {
   try {
     const { items } = req.body;
 
-    // Validasi input
     if (!items || !Array.isArray(items)) {
       return res
         .status(400)
@@ -153,7 +182,7 @@ app.post("/api/checkout", async (req, res) => {
   }
 });
 
-// Flash Sale Settings (DIPINDAHKAN KE ATAS)
+// Flash Sale Settings
 app.get("/api/flashsale/settings", async (req, res) => {
   try {
     const settings = await readData("flashsale_settings");

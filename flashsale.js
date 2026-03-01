@@ -3,9 +3,17 @@ let flashSaleProducts = [];
 let FLASH_SALE_END = new Date();
 let cart = [];
 
-// Variabel untuk checkout
 let currentCheckoutItems = [];
 let isCheckoutFromCart = false;
+
+// ==================== FUNGSI HELPER PROXY GAMBAR ====================
+function getProxyUrl(url) {
+  if (!url) return "https://via.placeholder.com/400?text=DMK";
+  if (url.includes("i.ibb.co")) {
+    return `/api/image?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
 
 // ==================== INITIALIZATION ====================
 document.addEventListener("DOMContentLoaded", function () {
@@ -160,7 +168,8 @@ function renderCartItems() {
     const itemEl = document.createElement("div");
     itemEl.className = "cart-item";
     itemEl.innerHTML = `
-      <div class="cart-item-image"><img src="${item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/80x80/1a1a1a/d4af37?text=DMK'"></div>
+      <!-- PERUBAHAN: Gunakan Proxy -->
+      <div class="cart-item-image"><img src="${getProxyUrl(item.image)}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/80x80/1a1a1a/d4af37?text=DMK'"></div>
       <div class="cart-item-info"><h4 class="cart-item-name">${item.name}</h4><span class="cart-item-price">${formatPrice(item.price)}</span></div>
       <button class="cart-item-remove" onclick="removeFromCart(${item.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     `;
@@ -275,7 +284,7 @@ async function confirmCheckout() {
       }
 
       closeCheckoutModal();
-      fetchFlashSaleProducts(); // Refresh produk
+      fetchFlashSaleProducts();
       showToast("Checkout berhasil!");
     } else {
       showToast("Gagal update stok di server.");
@@ -353,7 +362,6 @@ function renderFlashSaleProducts() {
     const isOutOfStock = product.stock <= 0;
     const discount = product.discount || 0;
 
-    // Ambil gambar
     const productImages =
       product.images && product.images.length > 0
         ? product.images
@@ -370,7 +378,8 @@ function renderFlashSaleProducts() {
               .map(
                 (img, i) => `
                 <div class="product-slide">
-                    <img src="${img}" alt="${product.name} - ${i + 1}" onerror="this.src='https://via.placeholder.com/400x400/1a1a1a/ef4444?text=Error'">
+                    <!-- PERUBAHAN: Gunakan Proxy -->
+                    <img src="${getProxyUrl(img)}" alt="${product.name} - ${i + 1}" onerror="this.src='https://via.placeholder.com/400x400/1a1a1a/ef4444?text=Error'">
                 </div>
             `,
               )

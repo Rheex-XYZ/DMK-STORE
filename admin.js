@@ -1,6 +1,15 @@
 // ================== ADMIN LOGIC ==================
 let currentType = "products";
 
+// ==================== FUNGSI HELPER PROXY GAMBAR ====================
+function getProxyUrl(url) {
+  if (!url) return "https://via.placeholder.com/400?text=DMK";
+  if (url.includes("i.ibb.co")) {
+    return `/api/image?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const isLoggedIn = localStorage.getItem("dmk_admin_logged_in");
   if (isLoggedIn === "true") {
@@ -149,7 +158,6 @@ async function loadProducts() {
     const res = await fetch(`/api/${currentType}`);
     const products = await res.json();
 
-    // Panggil fungsi untuk update opsi kategori di form
     populateCategoryOptions(products);
 
     if (products.length === 0) {
@@ -162,7 +170,8 @@ async function loadProducts() {
       .map(
         (p) => `
       <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 flex gap-4">
-        <img src="${p.images && p.images[0] ? p.images[0] : ""}" alt="${p.name}" class="w-24 h-24 object-cover rounded" onerror="this.src='https://via.placeholder.com/100'">
+        <!-- PERUBAHAN: Gunakan Proxy -->
+        <img src="${getProxyUrl(p.images && p.images[0] ? p.images[0] : "")}" alt="${p.name}" class="w-24 h-24 object-cover rounded" onerror="this.src='https://via.placeholder.com/100'">
         <div class="flex-1">
           <h3 class="font-bold text-yellow-500">${p.name}</h3>
           <p class="text-sm text-gray-400">Kategori: ${p.category || "-"}</p>
@@ -224,7 +233,6 @@ async function saveProduct(e) {
     return alert("Kategori tidak boleh kosong!");
   }
 
-  // Kumpulkan gambar
   const img1 = document.getElementById("image1").value;
   const img2 = document.getElementById("image2").value;
   const img3 = document.getElementById("image3").value;
@@ -243,7 +251,7 @@ async function saveProduct(e) {
     stock: parseInt(document.getElementById("stock").value),
     category: categoryInput,
     size: document.getElementById("size").value,
-    images: images, // Kirim array
+    images: images,
     description: document.getElementById("description").value,
   };
 
@@ -292,29 +300,29 @@ async function editProduct(id) {
       document.getElementById("size").value = product.size || "";
       document.getElementById("description").value = product.description || "";
 
-      // Isi input gambar
       const imgs = product.images || [];
+      // Input value harus URL ASLI agar database tersimpan benar
       document.getElementById("image1").value = imgs[0] || "";
       document.getElementById("image2").value = imgs[1] || "";
       document.getElementById("image3").value = imgs[2] || "";
 
-      // Update preview
+      // Update preview menggunakan PROXY
       const prev1 = document.getElementById("preview1");
       const prev2 = document.getElementById("preview2");
       const prev3 = document.getElementById("preview3");
 
       if (imgs[0]) {
-        prev1.src = imgs[0];
+        prev1.src = getProxyUrl(imgs[0]); // Pakai Proxy
         prev1.classList.remove("hidden");
       } else prev1.classList.add("hidden");
 
       if (imgs[1]) {
-        prev2.src = imgs[1];
+        prev2.src = getProxyUrl(imgs[1]); // Pakai Proxy
         prev2.classList.remove("hidden");
       } else prev2.classList.add("hidden");
 
       if (imgs[2]) {
-        prev3.src = imgs[2];
+        prev3.src = getProxyUrl(imgs[2]); // Pakai Proxy
         prev3.classList.remove("hidden");
       } else prev3.classList.add("hidden");
 
@@ -348,7 +356,6 @@ async function deleteProduct(id) {
 function resetForm() {
   document.getElementById("productForm").reset();
   document.getElementById("productId").value = "";
-  // Sembunyikan preview
   document.getElementById("preview1").classList.add("hidden");
   document.getElementById("preview2").classList.add("hidden");
   document.getElementById("preview3").classList.add("hidden");
@@ -396,11 +403,13 @@ async function handleImageUpload(event, inputId, previewId) {
     const data = await res.json();
 
     if (data.success) {
+      // Simpan URL ASLI ke input (untuk database)
       inputUrl.value = data.url;
       statusEl.textContent = "Upload berhasil!";
       statusEl.className = "text-xs text-green-500 mt-1";
 
-      previewEl.src = data.url;
+      // Tampilkan di preview menggunakan PROXY
+      previewEl.src = getProxyUrl(data.url); // Pakai Proxy
       previewEl.classList.remove("hidden");
     } else {
       throw new Error(data.message || "Gagal upload ke server");
