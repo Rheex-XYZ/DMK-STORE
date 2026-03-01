@@ -2,7 +2,6 @@
 let flashSaleProducts = [];
 let FLASH_SALE_END = new Date();
 let cart = [];
-let currentCategoryView = "all"; // 'all' untuk kategori, nama kategori untuk detail
 
 let currentCheckoutItems = [];
 let isCheckoutFromCart = false;
@@ -38,6 +37,8 @@ async function loadFlashSaleSettings() {
     } else {
       FLASH_SALE_END = new Date(2020, 0, 1);
     }
+    // Simpan settings ke global untuk cover kategori
+    window.fsSettings = settings || {};
   } catch (err) {
     console.error("Gagal load waktu flash sale", err);
   }
@@ -93,7 +94,7 @@ function updateCountdown() {
     );
 }
 
-// ==================== FUNGSI KERANJANG ====================
+// ==================== KERANJANG ====================
 function loadCart() {
   const savedCart = localStorage.getItem("dmk_cart");
   if (savedCart) {
@@ -106,10 +107,17 @@ function saveCart() {
   updateCartUI();
 }
 
-function addToCart(product) {
-  if (!product || product.stock <= 0) return;
+// PERBAIKAN: AddToCart sekarang menerima ID, lalu mencari data produk
+function addToCart(productId) {
+  // Cari produk berdasarkan ID dari array flashSaleProducts
+  const product = flashSaleProducts.find((p) => p.id === productId);
 
-  const existingItem = cart.find((item) => item.id === product.id);
+  if (!product || product.stock <= 0) {
+    showToast("Produk tidak valid atau stok habis");
+    return;
+  }
+
+  const existingItem = cart.find((item) => item.id === productId);
   if (existingItem) {
     showToast("Produk sudah ada di keranjang");
     return;
@@ -117,7 +125,7 @@ function addToCart(product) {
 
   cart.push({
     id: product.id,
-    name: product.name, // Disimpan untuk referensi admin/internal
+    name: product.name,
     price: product.price,
     image: product.images ? product.images[0] : "",
     isFlashSale: true,
@@ -203,22 +211,17 @@ function toggleMenu() {
     : "";
 }
 
-// ... (kode awal tetap sama)
-
 // ==================== LOGIC VIEW & RENDER ====================
 
 async function fetchFlashSaleProducts() {
   const grid = document.getElementById("fsCategoryGrid");
   try {
-    // Ambil data produk
     const res = await fetch("/api/flashsale");
     if (res.ok) flashSaleProducts = await res.json();
 
-    // Ambil data settings (untuk cover kategori)
+    // Load ulang settings untuk cover kategori
     const setRes = await fetch("/api/flashsale/settings");
     const settings = await setRes.json();
-
-    // Simpan ke global untuk digunakan render
     window.fsSettings = settings || {};
 
     renderCategoryView();
@@ -241,29 +244,38 @@ function renderCategoryView() {
   titleEl.textContent = "Pilih Kategori";
   subtitleEl.textContent = "Klik kategori untuk melihat detail ukuran";
 
-  // Grouping by Category
   const categories = {};
+  // Grouping products by category
   flashSaleProducts.forEach((p) => {
-    if (!categories[p.category]) categories[p.category] = [];
-    categories[p.category].push(p);
+    // Normalisasi kategori (trim spaces, lowercase untuk key)
+    const catKey = (p.category || "Lainnya").trim();
+    if (!categories[catKey]) categories[catKey] = [];
+    categories[catKey].push(p);
   });
 
   grid.innerHTML = "";
 
+  if (Object.keys(categories).length === 0) {
+    grid.innerHTML =
+      "<p class='text-gray-500 col-span-2 text-center'>Belum ada produk Flash Sale.</p>";
+    return;
+  }
+
   Object.keys(categories).forEach((cat) => {
     const items = categories[cat];
     const totalStock = items.reduce((sum, item) => sum + (item.stock || 0), 0);
+
+    // Hitung Harga Min-Max
     const salePrices = items.map((i) => i.price).filter((p) => p > 0);
     const originalPrices = items
       .map((i) => i.originalPrice)
       .filter((p) => p > 0);
-
     const minSale = salePrices.length ? Math.min(...salePrices) : 0;
     const maxSale = salePrices.length ? Math.max(...salePrices) : 0;
     const minOrig = originalPrices.length ? Math.min(...originalPrices) : 0;
     const maxOrig = originalPrices.length ? Math.max(...originalPrices) : 0;
 
-    // CEK COVER KHUSUS DARI SETTINGS, JIKA TIDAK ADA AMBIL DARI PRODUK PERTAMA
+    // Cek Cover Khusus
     let coverImage = "";
     if (
       window.fsSettings &&
@@ -280,6 +292,7 @@ function renderCategoryView() {
 
     const card = document.createElement("div");
     card.className = "fs-category-card";
+    // PERBAIKAN: Encode cat untuk passing ke onclick agar aman
     card.innerHTML = `
       <div class="fs-category-image">
         <span class="fs-category-badge">Flash Sale</span>
@@ -302,8 +315,6 @@ function renderCategoryView() {
   });
 }
 
-// ... (kode selanjutnya tetap sama)
-
 // 2. TAMPILAN DETAIL VARIAN
 function showDetailCategory(category) {
   const grid = document.getElementById("flashSaleGrid");
@@ -319,10 +330,19 @@ function showDetailCategory(category) {
   titleEl.textContent = `Kategori: ${category}`;
   subtitleEl.textContent = "Pilih ukuran dan tambahkan ke keranjang";
 
-  // Filter produk berdasarkan kategori
-  const filtered = flashSaleProducts.filter((p) => p.category === category);
+  // Filter produk: Normalisasi kategori saat filter
+  const filtered = flashSaleProducts.filter(
+    (p) => (p.category || "").trim() === category,
+  );
 
   grid.innerHTML = "";
+
+  if (filtered.length === 0) {
+    grid.innerHTML =
+      "<p class='text-gray-500 col-span-2 text-center'>Tidak ada varian untuk kategori ini.</p>";
+    return;
+  }
+
   filtered.forEach((product) => {
     const card = document.createElement("div");
     card.className = "flash-card";
@@ -332,6 +352,7 @@ function showDetailCategory(category) {
         ? product.images[0]
         : "https://via.placeholder.com/400?text=No+Image";
 
+    // PERBAIKAN: Gunakan ID untuk onclick, bukan JSON Object
     card.innerHTML = `
       <div class="flash-image-container">
         <span class="flash-tag">${category}</span>
@@ -343,7 +364,7 @@ function showDetailCategory(category) {
         <p class="flash-card-stock ${isOutOfStock ? "out-of-stock" : "available"}">${isOutOfStock ? "Stok Habis" : `Stok: ${product.stock}`}</p>
         
         <div class="flash-card-actions">
-          <button class="btn-fs-cart" onclick='addToCart(${JSON.stringify(product).replace(/'/g, "\\'")})' ${isOutOfStock ? "disabled" : ""}>
+          <button class="btn-fs-cart" onclick="addToCart(${product.id})" ${isOutOfStock ? "disabled" : ""}>
              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
              Keranjang
           </button>
