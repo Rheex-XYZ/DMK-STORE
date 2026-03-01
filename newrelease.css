@@ -165,9 +165,9 @@
   box-shadow: 0 4px 15px var(--new-release-glow);
 }
 
-/* Products Section - PERBAIKAN DISINI */
+/* Products Section */
 .nr-products-section {
-  display: block; /* Paksa tampil */
+  display: block;
   padding: 0 1rem 4rem;
 }
 
@@ -187,6 +187,8 @@
   border: 1px solid var(--border-color);
   transition: all 0.4s ease;
   position: relative;
+  display: flex;
+  flex-direction: column; /* Buat card fleksibel tinggi */
 }
 
 .new-release-card:hover {
@@ -270,11 +272,12 @@
   z-index: 5;
 }
 
-/* Image Container */
+/* Image Container - PERBAIKAN UTAMA DISINI */
 .nr-image-container {
   position: relative;
   width: 100%;
-  height: 300px;
+  /* Hapus height fixed, pakai aspect-ratio agar kotak selalu 1:1 */
+  aspect-ratio: 1 / 1;
   overflow: hidden;
   background: var(--bg-secondary);
 }
@@ -282,8 +285,12 @@
 .nr-image-container img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  /* Gunakan 'contain' agar gambar TIDAK TERPOTONG dan tetap utuh di dalam kotak */
+  object-fit: contain;
+  /* Posisikan gambar di tengah */
+  object-position: center;
   transition: transform 0.5s ease;
+  background-color: var(--bg-secondary); /* Warna background sisa ruang */
 }
 
 .new-release-card:hover .nr-image-container img {
@@ -293,6 +300,9 @@
 /* Card Info */
 .nr-card-info {
   padding: 1.5rem;
+  flex-grow: 1; /* Biar info card mengisi sisa ruang */
+  display: flex;
+  flex-direction: column;
 }
 
 .nr-card-name {
@@ -316,6 +326,7 @@
   font-weight: 700;
   color: var(--new-release-color);
   margin-bottom: 1rem;
+  margin-top: auto; /* Dorong harga ke bawah jika perlu */
 }
 
 .nr-stock {
@@ -333,6 +344,7 @@
 .nr-card-actions {
   display: flex;
   gap: 0.5rem;
+  margin-top: auto; /* Pastikan tombol di bawah */
 }
 
 .nr-btn-cart {
@@ -423,11 +435,15 @@
     font-size: 0.85rem;
   }
   .products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(220px, 1fr)
+    ); /* Sedikit mengecilkan min lebar di mobile */
     gap: 1rem;
   }
+  /* Hapus height: 250px agar aspect-ratio 1:1 bekerja di mobile */
   .nr-image-container {
-    height: 250px;
+    height: auto;
   }
   .nr-card-actions {
     flex-direction: column;
@@ -439,7 +455,7 @@
 }
 @media (max-width: 480px) {
   .products-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* 1 kolom penuh di mobile kecil */
   }
   .back-btn span {
     display: none;
