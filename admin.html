@@ -35,6 +35,20 @@
         cursor: pointer;
         font-weight: bold;
       }
+      /* Style untuk dynamic image row */
+      .image-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .image-preview-small {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 1px solid #555;
+      }
     </style>
   </head>
   <body class="bg-gray-950 text-white min-h-screen">
@@ -139,7 +153,7 @@
         <div
           class="lg:col-span-1 bg-gray-900 p-6 rounded-xl border border-gray-800 h-fit sticky top-20"
         >
-          <!-- Pengaturan Waktu Flash Sale -->
+          <!-- Pengaturan Waktu & Cover Flash Sale -->
           <div
             id="flashSaleTimerSettings"
             class="mb-6 p-4 bg-gray-800 rounded-lg border border-dashed border-yellow-500 hidden"
@@ -147,6 +161,8 @@
             <h3 class="text-yellow-500 font-bold mb-3">
               Pengaturan Flash Sale
             </h3>
+
+            <!-- Waktu -->
             <div class="mb-4">
               <label class="text-xs text-gray-400">Waktu Berakhir</label>
               <input
@@ -154,19 +170,68 @@
                 id="flashSaleEndTime"
                 class="w-full bg-gray-700 p-2 rounded border border-gray-600 text-white mt-1"
               />
+              <button
+                type="button"
+                onclick="saveFlashSaleSettings()"
+                class="w-full bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-2 rounded text-sm mt-2"
+              >
+                Simpan Waktu
+              </button>
+              <p
+                id="currentEndTime"
+                class="text-xs text-gray-500 mt-2 text-center"
+              ></p>
             </div>
-            <!-- Cover Kategori bisa diletakkan di sini jika perlu, atau tab terpisah -->
-            <button
-              type="button"
-              onclick="saveFlashSaleSettings()"
-              class="w-full bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-2 rounded text-sm"
-            >
-              Simpan Waktu
-            </button>
-            <p
-              id="currentEndTime"
-              class="text-xs text-gray-500 mt-2 text-center"
-            ></p>
+
+            <hr class="border-gray-600 my-4" />
+
+            <!-- Cover Kategori -->
+            <h3 class="text-yellow-500 font-bold mb-2 text-sm">
+              Cover Kategori Flash Sale
+            </h3>
+            <p class="text-xs text-gray-400 mb-3">
+              Atur gambar sampul untuk setiap kategori yang akan tampil di
+              halaman utama.
+            </p>
+
+            <div class="space-y-3" id="categoryCoverList">
+              <!-- List cover akan diisi JS -->
+            </div>
+
+            <div class="mt-4 bg-gray-900 p-3 rounded border border-gray-700">
+              <label class="text-xs text-gray-400 block mb-2"
+                >Tambah Cover Baru</label
+              >
+              <input
+                type="text"
+                id="inputCoverCategory"
+                placeholder="Nama Kategori (cth: Baju)"
+                class="w-full bg-gray-700 p-2 rounded border border-gray-600 text-sm mb-2"
+              />
+              <input
+                type="text"
+                id="inputCoverImage"
+                placeholder="Link Gambar Cover"
+                class="w-full bg-gray-700 p-2 rounded border border-gray-600 text-sm mb-2"
+              />
+              <label
+                class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded cursor-pointer text-xs font-semibold w-full block text-center mb-2"
+              >
+                Upload Gambar
+                <input
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  onchange="handleCoverUpload(event)"
+                />
+              </label>
+              <button
+                onclick="saveCategoryCover()"
+                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded text-xs"
+              >
+                Simpan Cover Kategori
+              </button>
+            </div>
           </div>
 
           <!-- FORM STANDAR (Untuk Produk Utama & New Release) -->
@@ -245,31 +310,23 @@
                 />
               </div>
 
+              <!-- DYNAMIC IMAGES SECTION -->
               <div>
-                <label class="text-sm text-gray-400">Link Gambar</label>
-                <div class="flex gap-2 items-center mt-1">
-                  <input
-                    type="text"
-                    id="image1"
-                    class="flex-1 bg-gray-800 p-2 rounded border border-gray-700 outline-none text-sm"
-                    required
-                  />
-                  <label
-                    class="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded cursor-pointer text-xs font-semibold"
-                    >Upload<input
-                      type="file"
-                      id="imageFile1"
-                      accept="image/*"
-                      class="hidden"
-                      onchange="handleImageUpload(event, 'image1', 'preview1')"
-                  /></label>
+                <label class="text-sm text-gray-400 block mb-2"
+                  >Gambar Produk</label
+                >
+                <div id="productImageContainer" class="space-y-2">
+                  <!-- Dynamic rows will be added here -->
                 </div>
-                <img
-                  id="preview1"
-                  class="mt-2 w-20 h-20 object-cover rounded border border-gray-700 hidden"
-                  alt="Preview"
-                />
+                <button
+                  type="button"
+                  onclick="addImageRow()"
+                  class="mt-2 w-full border-2 border-dashed border-gray-600 text-gray-400 py-2 rounded-lg hover:border-blue-500 hover:text-blue-500 transition text-sm"
+                >
+                  + Tambah Gambar
+                </button>
               </div>
+              <!-- END DYNAMIC IMAGES -->
 
               <div>
                 <label class="text-sm text-gray-400">Deskripsi</label>
