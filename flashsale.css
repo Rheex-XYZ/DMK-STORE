@@ -83,7 +83,7 @@
   margin-bottom: 2rem;
 }
 
-/* ==================== COUNTDOWN FIX ==================== */
+/* ==================== COUNTDOWN ==================== */
 .countdown-container {
   background: linear-gradient(
     135deg,
@@ -94,9 +94,9 @@
   border-radius: 20px;
   padding: 2rem;
   display: inline-block;
-  width: 100%; /* Lebarkan agar mudah diatur */
-  max-width: 500px; /* Batasi lebar maksimal */
-  box-sizing: border-box; /* Pastikan padding masuk hitungan */
+  width: 100%;
+  max-width: 500px;
+  box-sizing: border-box;
 }
 .countdown-label {
   font-size: 0.9rem;
@@ -110,16 +110,15 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  flex-wrap: wrap; /* Bungkus jika sempit */
+  flex-wrap: wrap;
 }
 .countdown-box {
   background: var(--bg-card);
   border: 1px solid var(--flash-color);
   border-radius: 12px;
   padding: 1rem 1.2rem;
-  /* min-width dihapus/kecilkan agar flex bisa bekerja */
   min-width: 60px;
-  flex: 1; /* Biarkan box membesar merata */
+  flex: 1;
   box-shadow: 0 4px 20px var(--flash-glow);
   box-sizing: border-box;
 }
@@ -144,7 +143,6 @@
   font-weight: 700;
   color: var(--flash-color);
   animation: blink 1s ease-in-out infinite;
-  /* Agar separator tidak menyusut */
   flex: 0 0 auto;
   padding: 0 2px;
 }
@@ -238,13 +236,14 @@
 .fs-category-image {
   position: relative;
   width: 100%;
-  height: 300px;
+  /* PERBAIKAN: Pakai aspect-ratio agar selalu 1:1 */
+  aspect-ratio: 1 / 1;
   overflow: hidden;
 }
 .fs-category-image img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: cover; /* Mencegah gambar gepeng/tertarik */
   transition: transform 0.5s ease;
 }
 .fs-category-card:hover .fs-category-image img {
@@ -346,14 +345,15 @@
 .flash-image-container {
   position: relative;
   width: 100%;
-  height: 250px;
+  /* PERBAIKAN: Pakai aspect-ratio agar selalu 1:1 */
+  aspect-ratio: 1 / 1;
   overflow: hidden;
   background: var(--bg-secondary);
 }
 .flash-image-container img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: cover; /* Mencegah gambar gepeng/tertarik */
   transition: transform 0.5s ease;
 }
 .flash-card:hover .flash-image-container img {
@@ -478,12 +478,7 @@
 /* ==================== RESPONSIVE FIXES ==================== */
 
 @media (max-width: 768px) {
-  .fs-category-image {
-    height: 220px;
-  }
-  .flash-image-container {
-    height: 200px;
-  }
+  /* Hapus height statis, biarkan aspect-ratio bekerja */
   .fs-category-grid,
   .flash-products-grid {
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
