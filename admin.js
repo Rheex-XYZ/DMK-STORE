@@ -1,15 +1,6 @@
 // ================== ADMIN LOGIC ==================
 let currentType = "products";
 
-// ==================== FUNGSI HELPER PROXY GAMBAR ====================
-function getProxyUrl(url) {
-  if (!url) return "https://via.placeholder.com/400?text=DMK";
-  if (url.includes("i.ibb.co")) {
-    return `/api/image?url=${encodeURIComponent(url)}`;
-  }
-  return url;
-}
-
 document.addEventListener("DOMContentLoaded", () => {
   const isLoggedIn = localStorage.getItem("dmk_admin_logged_in");
   if (isLoggedIn === "true") {
@@ -87,7 +78,7 @@ function switchTab(type) {
 
   const titles = {
     products: { form: "Tambah Produk Utama", list: "Daftar Produk Utama" },
-    flashsale: { form: "Tambah Flash Sale", list: "Daftar Flash Sale" },
+    flashsale: { form: "Tambah Produk Flash Sale", list: "Daftar Flash Sale" },
     newrelease: { form: "Tambah New Release", list: "Daftar New Release" },
   };
   document.getElementById("formTitle").textContent = titles[type].form;
@@ -167,25 +158,29 @@ async function loadProducts() {
     }
 
     listEl.innerHTML = products
-      .map(
-        (p) => `
-      <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 flex gap-4">
-        <!-- PERUBAHAN: Gunakan Proxy -->
-        <img src="${getProxyUrl(p.images && p.images[0] ? p.images[0] : "")}" alt="${p.name}" class="w-24 h-24 object-cover rounded" onerror="this.src='https://via.placeholder.com/100'">
-        <div class="flex-1">
-          <h3 class="font-bold text-yellow-500">${p.name}</h3>
-          <p class="text-sm text-gray-400">Kategori: ${p.category || "-"}</p>
-          <p class="text-sm text-gray-400">Stok: ${p.stock}</p>
-          <p class="font-bold text-white">${formatPrice(p.price)}</p>
-          ${p.originalPrice ? `<p class="text-xs text-gray-500 line-through">${formatPrice(p.originalPrice)}</p>` : ""}
+      .map((p) => {
+        // Khusus Flash Sale tampilkan harga coret
+        const priceDisplay =
+          currentType === "flashsale"
+            ? `<p class="font-bold text-white">${formatPrice(p.price)} <span class="text-xs text-gray-500 line-through ml-1">${formatPrice(p.originalPrice)}</span></p>`
+            : `<p class="font-bold text-white">${formatPrice(p.price)}</p>`;
+
+        return `
+        <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 flex gap-4">
+          <img src="${getProxyUrl(p.images && p.images[0] ? p.images[0] : "")}" alt="${p.name}" class="w-24 h-24 object-cover rounded" onerror="this.src='https://via.placeholder.com/100'">
+          <div class="flex-1">
+            <h3 class="font-bold text-yellow-500">${p.name}</h3>
+            <p class="text-sm text-gray-400">Kategori: ${p.category || "-"} | Ukuran: ${p.size || "-"}</p>
+            <p class="text-sm text-gray-400">Stok: ${p.stock}</p>
+            ${priceDisplay}
+          </div>
+          <div class="flex flex-col gap-2">
+            <button onclick="editProduct(${p.id})" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-xs">Edit</button>
+            <button onclick="deleteProduct(${p.id})" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs">Hapus</button>
+          </div>
         </div>
-        <div class="flex flex-col gap-2">
-          <button onclick="editProduct(${p.id})" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-xs">Edit</button>
-          <button onclick="deleteProduct(${p.id})" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs">Hapus</button>
-        </div>
-      </div>
-    `,
-      )
+      `;
+      })
       .join("");
   } catch (err) {
     console.error(err);
@@ -222,7 +217,7 @@ async function populateCategoryOptions(currentProducts) {
   }
 }
 
-// ================== SAVE PRODUCT (MULTI IMAGE) ==================
+// ================== SAVE PRODUCT ==================
 async function saveProduct(e) {
   e.preventDefault();
 
@@ -233,6 +228,7 @@ async function saveProduct(e) {
     return alert("Kategori tidak boleh kosong!");
   }
 
+  // Kumpulkan gambar
   const img1 = document.getElementById("image1").value;
   const img2 = document.getElementById("image2").value;
   const img3 = document.getElementById("image3").value;
@@ -255,10 +251,10 @@ async function saveProduct(e) {
     description: document.getElementById("description").value,
   };
 
+  // Khusus Flash Sale, tambahkan harga awal
   if (currentType === "flashsale") {
-    productData.originalPrice = parseInt(
-      document.getElementById("originalPrice").value,
-    );
+    productData.originalPrice =
+      parseInt(document.getElementById("originalPrice").value) || 0;
   }
 
   const url = id ? `/api/${currentType}/${id}` : `/api/${currentType}`;
@@ -284,7 +280,7 @@ async function saveProduct(e) {
   }
 }
 
-// ================== EDIT PRODUCT (MULTI IMAGE) ==================
+// ================== EDIT PRODUCT ==================
 async function editProduct(id) {
   try {
     const res = await fetch(`/api/${currentType}`);
@@ -300,32 +296,31 @@ async function editProduct(id) {
       document.getElementById("size").value = product.size || "";
       document.getElementById("description").value = product.description || "";
 
+      // Isi input gambar
       const imgs = product.images || [];
-      // Input value harus URL ASLI agar database tersimpan benar
       document.getElementById("image1").value = imgs[0] || "";
       document.getElementById("image2").value = imgs[1] || "";
       document.getElementById("image3").value = imgs[2] || "";
 
-      // Update preview menggunakan PROXY
+      // Update preview
       const prev1 = document.getElementById("preview1");
       const prev2 = document.getElementById("preview2");
       const prev3 = document.getElementById("preview3");
 
       if (imgs[0]) {
-        prev1.src = getProxyUrl(imgs[0]); // Pakai Proxy
+        prev1.src = getProxyUrl(imgs[0]);
         prev1.classList.remove("hidden");
       } else prev1.classList.add("hidden");
-
       if (imgs[1]) {
-        prev2.src = getProxyUrl(imgs[1]); // Pakai Proxy
+        prev2.src = getProxyUrl(imgs[1]);
         prev2.classList.remove("hidden");
       } else prev2.classList.add("hidden");
-
       if (imgs[2]) {
-        prev3.src = getProxyUrl(imgs[2]); // Pakai Proxy
+        prev3.src = getProxyUrl(imgs[2]);
         prev3.classList.remove("hidden");
       } else prev3.classList.add("hidden");
 
+      // Khusus Flash Sale
       if (currentType === "flashsale" && product.originalPrice) {
         document.getElementById("originalPrice").value = product.originalPrice;
       }
@@ -362,7 +357,7 @@ function resetForm() {
 
   const titles = {
     products: "Tambah Produk Utama",
-    flashsale: "Tambah Flash Sale",
+    flashsale: "Tambah Produk Flash Sale",
     newrelease: "Tambah New Release",
   };
   document.getElementById("formTitle").textContent = titles[currentType];
@@ -372,7 +367,14 @@ function formatPrice(price) {
   return "Rp " + price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
-// ================== FITUR UPLOAD GAMBAR (MULTI INPUT) ==================
+// ================== FITUR UPLOAD GAMBAR ==================
+function getProxyUrl(url) {
+  if (!url) return "https://via.placeholder.com/400?text=DMK";
+  if (url.includes("i.ibb.co"))
+    return `/api/image?url=${encodeURIComponent(url)}`;
+  return url;
+}
+
 async function handleImageUpload(event, inputId, previewId) {
   const file = event.target.files[0];
   if (!file) return;
@@ -403,13 +405,11 @@ async function handleImageUpload(event, inputId, previewId) {
     const data = await res.json();
 
     if (data.success) {
-      // Simpan URL ASLI ke input (untuk database)
-      inputUrl.value = data.url;
+      inputUrl.value = data.url; // Simpan URL asli ke input
       statusEl.textContent = "Upload berhasil!";
       statusEl.className = "text-xs text-green-500 mt-1";
 
-      // Tampilkan di preview menggunakan PROXY
-      previewEl.src = getProxyUrl(data.url); // Pakai Proxy
+      previewEl.src = getProxyUrl(data.url); // Tampilkan via proxy
       previewEl.classList.remove("hidden");
     } else {
       throw new Error(data.message || "Gagal upload ke server");
