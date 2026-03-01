@@ -20,7 +20,7 @@
   z-index: 1;
 }
 
-/* Hero Styles (Sama seperti sebelumnya) */
+/* Hero Styles */
 .flash-hero {
   text-align: center;
   padding: 3rem 2rem;
@@ -82,6 +82,8 @@
   line-height: 1.8;
   margin-bottom: 2rem;
 }
+
+/* ==================== COUNTDOWN FIX ==================== */
 .countdown-container {
   background: linear-gradient(
     135deg,
@@ -92,6 +94,9 @@
   border-radius: 20px;
   padding: 2rem;
   display: inline-block;
+  width: 100%; /* Lebarkan agar mudah diatur */
+  max-width: 500px; /* Batasi lebar maksimal */
+  box-sizing: border-box; /* Pastikan padding masuk hitungan */
 }
 .countdown-label {
   font-size: 0.9rem;
@@ -105,14 +110,18 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  flex-wrap: wrap; /* Bungkus jika sempit */
 }
 .countdown-box {
   background: var(--bg-card);
   border: 1px solid var(--flash-color);
   border-radius: 12px;
   padding: 1rem 1.2rem;
-  min-width: 70px;
+  /* min-width dihapus/kecilkan agar flex bisa bekerja */
+  min-width: 60px;
+  flex: 1; /* Biarkan box membesar merata */
   box-shadow: 0 4px 20px var(--flash-glow);
+  box-sizing: border-box;
 }
 .countdown-value {
   display: block;
@@ -135,6 +144,9 @@
   font-weight: 700;
   color: var(--flash-color);
   animation: blink 1s ease-in-out infinite;
+  /* Agar separator tidak menyusut */
+  flex: 0 0 auto;
+  padding: 0 2px;
 }
 @keyframes blink {
   0%,
@@ -201,7 +213,6 @@
   max-width: 1200px;
   margin: 0 auto;
 }
-
 .flash-products-grid.hidden {
   display: none;
 }
@@ -275,7 +286,6 @@
   color: var(--text-secondary);
   margin-bottom: 1rem;
 }
-
 .fs-category-price-box {
   margin-bottom: 1.5rem;
 }
@@ -318,7 +328,7 @@
   height: 16px;
 }
 
-/* ==================== VARIANT CARD STYLE (DETAIL VIEW) ==================== */
+/* ==================== VARIANT CARD STYLE ==================== */
 .flash-card {
   background: var(--bg-card);
   border-radius: 20px;
@@ -417,7 +427,6 @@
   background: var(--gold-primary);
   color: var(--bg-primary);
 }
-
 .btn-fs-buy {
   background: linear-gradient(
     135deg,
@@ -437,7 +446,7 @@
   cursor: not-allowed;
 }
 
-/* Toast & Responsive */
+/* Toast */
 .toast {
   position: fixed;
   bottom: 30px;
@@ -466,6 +475,8 @@
   stroke: #22c55e;
 }
 
+/* ==================== RESPONSIVE FIXES ==================== */
+
 @media (max-width: 768px) {
   .fs-category-image {
     height: 220px;
@@ -477,5 +488,77 @@
   .flash-products-grid {
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 1rem;
+  }
+
+  /* Countdown Tablet */
+  .countdown-container {
+    padding: 1.5rem 1rem;
+    width: 95%;
+  }
+  .countdown-box {
+    padding: 0.8rem 0.5rem;
+    min-width: 50px;
+  }
+  .countdown-value {
+    font-size: 1.6rem;
+  }
+  .countdown-separator {
+    font-size: 1.6rem;
+  }
+  .countdown-label {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .flash-hero {
+    padding: 2rem 0.5rem;
+  }
+
+  /* Countdown Mobile */
+  .countdown-container {
+    padding: 1rem 0.5rem;
+    border-radius: 15px;
+    width: 100%;
+    max-width: 100%;
+  }
+  .countdown-timer {
+    gap: 0.3rem;
+  }
+  .countdown-box {
+    padding: 0.6rem 0.2rem;
+    min-width: 0; /* Reset min-width */
+    flex: 1; /* Bagi ruang merata */
+    border-radius: 8px;
+  }
+  .countdown-value {
+    font-size: 1.2rem;
+  }
+  .countdown-unit {
+    font-size: 0.6rem;
+    letter-spacing: 0;
+  }
+  .countdown-separator {
+    font-size: 1.2rem;
+    padding: 0;
+  }
+  .countdown-label {
+    font-size: 0.7rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Grid Mobile */
+  .fs-category-grid,
+  .flash-products-grid {
+    grid-template-columns: 1fr; /* 1 kolom penuh di mobile sangat kecil */
+  }
+
+  /* Buttons Mobile */
+  .flash-card-actions {
+    flex-direction: column;
+  }
+  .btn-fs-buy,
+  .btn-fs-cart {
+    width: 100%;
   }
 }
